@@ -1,12 +1,126 @@
 <!DOCTYPE html>
 <html>
-　　<head>
-　　　　<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-　　　　<title>{{ page.title }}</title>
-　　</head>
-　　<body>
 
-　　　　{{ content }}
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-　　</body>
+        <title>{{ page.title }}</title>
+        <meta name="description" content="php、mysql、Linux等等">
+        <style type="text/css">
+            
+            h1, h2, h3, h4, h5, h6{
+                font-family:'Helvetica Neue', 'Microsoft Yahei', 'Hiragino Sans GB', 'Microsoft Sans Serif', 'WenQuanYi Micro Hei', sans-serif;
+                font-weight:200;
+                color:#000;
+            }
+            h1, h2, h3, h4, h5, strong, b {
+                font-weight: 600;
+            }
+            header {
+                text-align: center;
+            }
+            /* 内外边距通常让各个浏览器样式的表现位置不同 */
+            body, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, input, textarea, p, blockquote, th, td, hr, button, article, aside, details, figcaption, figure, footer, header, menu, nav, section{
+                margin:0;
+                padding:0;
+            }
+            #container {
+                *zoom: 1;
+                -webkit-box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                box-sizing: border-box;
+                width: 100%;
+                max-width: 940px;
+                background: #fff;
+                margin: 40px auto 20px;
+                border-radius: 7px;
+                border: 1px solid #eee;
+                position: relative; 
+            }
+            #container .block{
+                border-top: 1px solid #efefef;
+                border-bottom: 1px solid #efefef;
+                padding: 30px 40px 24px;
+                text-align: center;
+            }
+            #container .block:first-child, #container .block + .block {
+                border-top: 0;
+            }
+            #go-back-home {
+                margin: 40px 0 0;
+            }
+            .content {
+                -webkit-box-sizing: border-box;
+                -moz-box-sizing: border-box;
+                box-sizing: border-box;
+                position: relative;
+                width: 100%;
+                border-width: 0;
+                border-style: solid;
+                padding: 30px 60px;
+                margin: auto;
+            }
+            a, .as-link {
+                text-decoration: none;
+                color: #269;
+                display: inline-block;
+                vertical-align: baseline;
+                zoom: 1;
+                *display: inline;
+                *vertical-align: auto;
+                -webkit-transition: color 0.3s;
+                -moz-transition: color 0.3s;
+                -ms-transition: color 0.3s;
+                -o-transition: color 0.3s;
+                transition: color 0.3s;
+            }
+            ul.posts, ul.posts li {
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+            ul.posts, ul.posts li {
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            ul.posts li {
+                margin-bottom: 20px;
+            }
+            div {
+                display: block;
+            }
+            body {
+                background: #f9f9f9;
+                color: #303030;
+                font-size: 15px;
+                line-height: 2em;
+                padding: 0;
+                margin: 0;
+            }
+            body, body * {
+                -webkit-font-smoothing: antialiased;
+            }
+            .typo h3, .typo-h3{
+                font-size:1.6em;
+            }
+            .typo h1, .typo h2, .typo h3, .typo h4, .typo h5, .typo h6,
+            .typo-h1, .typo-h2, .typo-h3, .typo-h4, .typo-h5, .typo-h6{
+                margin-bottom:0.4em;
+                line-height:1.5;
+            }
+            a.main, a:hover, .as-link.main, .as-link:hover {
+                color: #1d5884;
+                
+                background-repeat: repeat-x;
+                background-position: left bottom;
+            }
+            .typo a{ border-bottom:1px solid #1abc9c; }
+        </style>
+
+    </head>
+    <body>{{ content }}</body>
 </html>
