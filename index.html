@@ -2,13 +2,14 @@
 layout: default
 title: 木偶人的博客
 ---
-<header><a id="go-back-home" href="/monthly/"><h1>朝夕拾遗</h1></a></header>
+<header><a id="go-back-home" href="/"><h1>朝夕拾遗</h1></a></header>
     <div id ="container" class = "animated zoomIn">
         <div class="block"></div>
         <div class="content typo">
             <ul class="posts">
-                <li><h3><a class="main" href="/monthly/2017/05">第一篇</a></h3></li>
-                <li><h3><a class="main" href="/monthly/2017/05">第二篇</a></h3></li>
+                {% for post in site.posts %}
+                    <li><h3><a class="main" href="{{ post.url }}">{{ post.title }}</a></h3></li>
+                {% endfor %}
             </ul>
         </div>
     </div>
