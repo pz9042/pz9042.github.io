@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "markdown页面"
+title:  "markdown"
 date:   2017-05-25 18:16:01 -0600
 categories: jekyll update
 ---
