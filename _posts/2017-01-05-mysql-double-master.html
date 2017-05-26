@@ -1,0 +1,59 @@
+<!DOCTYPE html><html><head><title>mysql双主</title><meta charset='utf-8'><link href='https://dn-maxiang.qbox.me/res-min/themes/marxico.css' rel='stylesheet'><style>.note-content , .note-content  div {font-size: 16px;}
+
+.note-content  {font-family: "Helvetica Neue", Arial, "Hiragino Sans GB", STHeiti, "Microsoft YaHei", "WenQuanYi Micro Hei", SimSun, Song, sans-serif;}
+
+</style></head><body><div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="mysql双主">mysql双主</h3>
+
+<p>一般，我们经常用到mysql的集群功能，不管是读写分离还是负载均衡，都是基于复制的，并且基本时一主多从。但是一主带来的隐患时单点故障时，写请求就全部失败了。所以要解决单点故障，就需要完成高可用。本文暂时描述如何搭起双主的架构，之后在讲述利用keepalived来实现高可用。 事前，我们准备两台带有mysql server的服务器。我的配置如下  <br>
+ip:192.168.3.16 os:ubuntu mysql:5.7.9-log master ip:192.168.3.4 os:mac mysql:5.6.23-log </p>
+
+<table>
+<thead>
+<tr>
+  <th align="center">ip</th>
+  <th align="center">操作系统</th>
+  <th align="center">MySQL版本</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td align="center">192.168.3.16</td>
+  <td align="center">ubuntu</td>
+  <td align="center">5.7.9-log</td>
+</tr>
+<tr>
+  <td align="center">192.168.3.4</td>
+  <td align="center">mac</td>
+  <td align="center">5.6.23-log</td>
+</tr>
+</tbody></table>
+
+
+<blockquote>
+  <p>backup 准备的两台mysql版本不一致，建议大家在搭建的时候，尤其时生产环境务必保持一致（经测算5.5与5.7无法互为主从）。在master的<code>my.cnf中</code>增加</p>
+</blockquote>
+
+<pre class="prettyprint hljs-dark"><code class="language-ini hljs"><span class="hljs-comment">#主从同步配置，本机当做master</span><br> server-id=1<span class="hljs-comment">#参与集群的所有实例，server-id必须确保互相都不相同</span><br> log_bin=mysql_bin<br><span class="hljs-comment">#以下两个配置防止同时向两台写入数据时，id冲突</span><br><span class="hljs-attr">auto-increment-increment</span> = <span class="hljs-number">2</span><br><span class="hljs-attr">auto-increment-offset</span> = <span class="hljs-number">1</span><br><span class="hljs-comment">#log_slave_updates = 1</span><br> binlog-do-db = test//只同步来自master的test库的数据更新<br> relay-log-index=slave-relay-bin.index<br> relay-log=slave-relay-bin<br></code></pre>
+
+<p>在backup中的my.cnf中增加</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-ini hljs"><span class="hljs-comment">#主从同步配置，本机当做master</span><br> server-id=2<br> log_bin=mysql_bin<br><span class="hljs-comment">#以下两个配置防止同时向两台写入数据时，id冲突</span><br><span class="hljs-attr">auto-increment-increment</span> = <span class="hljs-number">2</span><br><span class="hljs-attr">auto-increment-offset</span> = <span class="hljs-number">2</span><br><span class="hljs-comment">#log_slave_updates = 1</span><br> binlog-do-db = test//只同步来自master的test库的数据更新<br> relay-log-index=slave-relay-bin.index<br> relay-log=slave-relay-bin<br></code></pre>
+
+<p>然后在master、backup中分别添加有REPLICATION、SLAVE权限的用户</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt;<span class="hljs-keyword">create</span> <span class="hljs-keyword">user</span> repl; //创建新用户<br>mysql&gt;<span class="hljs-keyword">GRANT</span> <span class="hljs-keyword">REPLICATION</span> <span class="hljs-keyword">SLAVE</span> <span class="hljs-keyword">ON</span> *.* <span class="hljs-keyword">TO</span> <span class="hljs-string">'repl'</span>@<span class="hljs-string">'192.168.3.%'</span> <span class="hljs-keyword">IDENTIFIED</span> <span class="hljs-keyword">BY</span> <span class="hljs-string">'repl'</span>;<br>mysql&gt;<span class="hljs-keyword">flush</span>  <span class="hljs-keyword">privileges</span>;<br><br>然后分别在master、slave中开启复制。在<span class="hljs-keyword">backup</span>中执行<span class="hljs-keyword">show</span> <span class="hljs-keyword">master</span> <span class="hljs-keyword">status</span>得到<span class="hljs-keyword">binlog</span>日志和<span class="hljs-keyword">position</span><br><br>mysql&gt; <span class="hljs-keyword">show</span> <span class="hljs-keyword">master</span> <span class="hljs-keyword">status</span>;<br>+<span class="hljs-comment">------------------+----------+--------------+------------------+-------------------+</span><br>| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |<br>+<span class="hljs-comment">------------------+----------+--------------+------------------+-------------------+</span><br>| mysql_bin.000001 |      120 | test         |                  |                   |<br>+<span class="hljs-comment">------------------+----------+--------------+------------------+---------------</span><br></code></pre>
+
+<p>拿到backup的信息后，就可以开启master指向backup的复制功能了。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt;<span class="hljs-keyword">change</span> <span class="hljs-keyword">master</span> <span class="hljs-keyword">to</span> master_host=<span class="hljs-string">'192.168.3.4'</span>,<br>master_port=<span class="hljs-number">3306</span>,<br>master_user=<span class="hljs-string">'repl'</span>,<br>master_password=<span class="hljs-string">'repl'</span>,<br>master_log_file=<span class="hljs-string">'mysql_bin.000001'</span>,<br>master_log_pos=<span class="hljs-number">120</span>;<br>mysql&gt;<span class="hljs-keyword">start</span> <span class="hljs-keyword">slave</span>;<br>mysql&gt; <span class="hljs-keyword">show</span> <span class="hljs-keyword">slave</span> statusG;<br>*************************** 1. row ***************************<br>               Slave_IO_State: Waiting for master to send event<br>                  Master_Host: 192.168.3.4<br>                  Master_User: repl<br>                  Master_Port: 3306<br>                Connect_Retry: 60<br>              Master_Log_File: mysql_bin.000001<br>          Read_Master_Log_Pos: 120<br>               Relay_Log_File: slave-relay-bin.000002<br>                Relay_Log_Pos: 317<br>        Relay_Master_Log_File: mysql_bin.000001<br>             Slave_IO_Running: Yes<br>            Slave_SQL_Running: Yes<br>              Replicate_Do_DB:<br>          Replicate_Ignore_DB:<br>           Replicate_Do_Table:<br>       Replicate_Ignore_Table:<br>      Replicate_Wild_Do_Table:<br>  Replicate_Wild_Ignore_Table:<br>                   Last_Errno: 0<br>                   Last_Error:<br>                 Skip_Counter: 0<br>          Exec_Master_Log_Pos: 120<br>              Relay_Log_Space: 524<br>              Until_Condition: None<br>               Until_Log_File:<br>                Until_Log_Pos: 0<br>           Master_SSL_Allowed: No<br>           Master_SSL_CA_File:<br>           Master_SSL_CA_Path:<br>              Master_SSL_Cert:<br>            Master_SSL_Cipher:<br>               Master_SSL_Key:<br>        Seconds_Behind_Master: 0<br>Master_SSL_Verify_Server_Cert: No<br>                Last_IO_Errno: 0<br>                Last_IO_Error:<br>               Last_SQL_Errno: 0<br>               Last_SQL_Error:<br>  Replicate_Ignore_Server_Ids:<br>             Master_Server_Id: 2<br>                  Master_UUID: fd2f223e-d462-11e4-b121-17110e143cf0<br>             Master_Info_File: /usr/local/mysql/data/master.info<br>                    SQL_Delay: 0<br>          SQL_Remaining_Delay: NULL<br>      Slave_SQL_Running_State: Slave has read all relay log; waiting for more updates<br>           Master_Retry_Count: 86400<br>                  Master_Bind:<br>      Last_IO_Error_Timestamp:<br>     Last_SQL_Error_Timestamp:<br>               Master_SSL_Crl:<br>           Master_SSL_Crlpath:<br>           Retrieved_Gtid_Set:<br>            Executed_Gtid_Set:<br>                Auto_Position: 0<br>         Replicate_Rewrite_DB:<br>                 Channel_Name:<br>1 row in <span class="hljs-keyword">set</span> (<span class="hljs-number">0.00</span> sec)<br></code></pre>
+
+<p>看起来成功了，我们在backup的test库中创建一个表，然后在master查询是否有了这个表，就可以验证整个过程是否已经完全成功。将此操作同样在backup中操作一遍，就可以完成backup作为master的slave，这样我们就完成了两个互为主从的实现了。不过，在这里需要强调的是，不应该将两个实例同时接受client的写请求，同时接受写请求架构更复杂，业务处理也更复杂，当然如果按库按表分离则另说。现在设计主主，是为了防止单点故障，这一点，下一章在讲。</p></div></body></html>

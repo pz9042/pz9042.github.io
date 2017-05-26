@@ -1,0 +1,18 @@
+---
+layout: article
+title:  "Ubuntu sh文件带[[]]报错问题"
+tags: ubuntu bash
+categories: 奇难杂症
+date: 2017-01-03 15:13:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="ubuntu-sh文件带报错问题">Ubuntu sh文件带[[]]报错问题</h3>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz-test:~$ cat tmp.sh<br><span class="hljs-meta">#!/bin/bash</span><br>strA=<span class="hljs-string">"helloworld"</span><br>strB=<span class="hljs-string">"low"</span><br><span class="hljs-keyword">if</span> [[ <span class="hljs-variable">$strA</span> =~ <span class="hljs-variable">$strB</span> ]]<br><span class="hljs-keyword">then</span><br>  <span class="hljs-built_in">echo</span> <span class="hljs-string">"包含"</span><br><span class="hljs-keyword">else</span><br>  <span class="hljs-built_in">echo</span> <span class="hljs-string">"不包含"</span><br><span class="hljs-keyword">fi</span><br>pengzhen@pz-test:~$ sh tmp.sh<br>tmp.sh: 4: tmp.sh: [[: not found<br>不包含<br>pengzhen@pz-test:~$ chmod u+x tmp.sh<br>pengzhen@pz-test:~$ ./tmp.sh<br>包含<br></code></pre></div></body></html>

@@ -1,0 +1,34 @@
+---
+layout: article
+title:  "mysql-5.7.12安装"
+tags: mysql 安装
+categories: mysql
+date: 2017-01-05 14:39:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="mysql-5712安装">mysql-5.7.12安装</h3>
+
+<p>系统是centos 6.4,首先从 <a href="http://dev.mysql.com/downloads/mysql/" target="_blank">mysql官网</a> 下载源码，我下的是Generic Linux (Architecture Independent), Compressed TAR Archive 5.7.12。</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">[root@pz-vm src]<span class="hljs-comment"># tar -zxvf mysql-5.7.12.tar.gz</span><br>[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># cd mysql-5.7.12</span><br>[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># yum install cmake //最近几个版本的mysql不使用 configure配置，使用cmake</span><br>[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># yum install ncurses-devel bison //必须的扩展</span><br>[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># cmake . -DDOWNLOAD_BOOST=1 -DWITH_BOOST=/usr/local/boost -CMAKE_INSTALL_PREFIX=/usr/local/mysql //需要boost库 ，且版本需要等于或高于1.59，也可以选择包含boost的mysql 源码</span><br>[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># make</span><br>[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># make install</span><br></code></pre>
+
+<p>安装过程就是这样，然后就是初始化mysql db和启动server了</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># groupadd mysql //设置mysql用户和组</span><br>[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># useradd -r -g mysql mysql</span><br>[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># cd /usr/local/mysql/</span><br>[root@pz-vm mysql]<span class="hljs-comment"># bin/mysqld --initialize //初始化库和表，不使用之前的scripts/mysql_install_db脚本</span><br>[root@pz-vm mysql]<span class="hljs-comment"># bin/mysqld_safe &amp;//启动server</span><br>最新版本mysql中，初始化密码不再为空，而是放在 ~/..mysql_secret文件中<br>[root@pz-vm mysql-5.7.12]<span class="hljs-comment"># cat ~/.mysql_secret</span><br></code></pre>
+
+<p>登录后再去修改密码，如果实在找不到密码，就以不校验密码的方式重新启动server，启动成功后，则可以不使用密码登录，在改完密码后，重新启动server。用默认密码登录进去后，执行任何操作前，mysql都报错</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">ERROR 1820 (HY000): You must reset your password using ALTER USER statement before executing this statement.<br></code></pre>
+
+<p>新版本的mysql，在账号安全方面做了改动和升级。报错意思是，在执行任何操作前，使用<code>alert user</code>修改默认密码，详细的alert user用法请查看 <code>alert user</code>，使用<code>alert user</code>语法 不需要刷新权限。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt;<span class="hljs-keyword">ALTER</span> <span class="hljs-keyword">USER</span> <span class="hljs-string">'root'</span>@<span class="hljs-string">'localhost'</span> <span class="hljs-keyword">IDENTIFIED</span> <span class="hljs-keyword">BY</span> <span class="hljs-string">'new_password'</span> <span class="hljs-keyword">PASSWORD</span> <span class="hljs-keyword">EXPIRE</span> <span class="hljs-keyword">NEVER</span>;<br></code></pre></div></body></html>
