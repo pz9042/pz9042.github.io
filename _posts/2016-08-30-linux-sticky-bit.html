@@ -1,0 +1,22 @@
+---
+layout: article
+title:  "python笔记"
+tags: linux
+categories: 涨姿势
+date: 2016-08-30 14:40:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="linux-suidsgid粘滞位">linux suid、sgid、粘滞位</h3>
+
+<ul><li><p>SUID：当一个程序有SUID位的时候，有X权限的用户运行该程序时候都将以程序所有着的身份运行，且SUID只对程序有效对脚本无效。如普通用户可以运行passwd命令将新密码写入<code>/etc/shadow</code>文件中</p></li>
+<li><p>SGID：可以为二进制程序和目录设置<code>SGID</code>位。有<code>X</code>权限的用户运行该程序时候会获得该程序所在组的支持。对于目录来说，任何有权在该目录下新建文件的用户创建的文件的数组都是继承该目录的属组。</p></li>
+<li><p>SBIT：只对目录有效。当一个目录被设置了<code>SBIT</code>以后，只有文件所有这和<code>root</code>用户可以更改删除该文件，其他用户只读。</p></li>
+</ul>
+
+<p>有时候会看到大写的<code>S</code>，<code>T</code>这是无效的。 <br>
+chmod 7777 txt来设置文件的强制位，第一个数字位就是强制为SUID=4,SGID=2,SBIT=1就是7了</p></div></body></html>

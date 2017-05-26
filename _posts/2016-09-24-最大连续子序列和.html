@@ -1,0 +1,15 @@
+---
+layout: article
+title:  "python笔记"
+categories: 代码块
+date: 2016-09-24 19:11:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="动态规划经典题目最大连续子序列和">动态规划经典题目：最大连续子序列和</h3>
+
+<pre class="prettyprint hljs-dark"><code class="language-cpp hljs"><span class="hljs-function"><span class="hljs-keyword">int</span> <span class="hljs-title">MaxSubSequence</span><span class="hljs-params">(<span class="hljs-keyword">const</span> <span class="hljs-keyword">int</span> A[], <span class="hljs-keyword">int</span> N)</span><br></span>{<br>  <span class="hljs-keyword">int</span> ThisSum,MaxSum,j;<br>  ThisSum = MaxSum =<span class="hljs-number">0</span>;<br>  <span class="hljs-keyword">for</span>(j = <span class="hljs-number">0</span>;j &lt; N;j++)<br>  {<br>    ThisSum += A[j];<br><br>    <span class="hljs-keyword">if</span>(ThisSum &gt; MaxSum)<br>      MaxSum = ThisSum;<br>    <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span>(ThisSum &lt; <span class="hljs-number">0</span>)<br>      ThisSum = <span class="hljs-number">0</span>;<br>  }<br>  <span class="hljs-keyword">return</span> MaxSum;<br>}<br></code></pre></div></body></html>

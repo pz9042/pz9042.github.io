@@ -1,0 +1,18 @@
+---
+layout: article
+title:  "ajax顺序执行"
+tags: js ajax
+categories: 代码块
+date: 2016-08-11 21:30:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="ajax顺序执行">ajax顺序执行</h3>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-javascript hljs">$.ajax(<span class="hljs-string">"test1.php"</span>).then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">data</span>) </span>{<br>    <span class="hljs-comment">// data 是 test1.php 的返回值</span><br>    <span class="hljs-keyword">return</span> $.ajax(<span class="hljs-string">"test2.php"</span>);<br>}).then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">data</span>) </span>{<br>    <span class="hljs-comment">// data 是 test2.php 的返回值</span><br>    <span class="hljs-keyword">return</span> $.ajax(<span class="hljs-string">"test3.php"</span>);<br>}).then(<span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">data</span>) </span>{<br>    <span class="hljs-keyword">return</span> $.ajax(<span class="hljs-string">"test4.php"</span>);<br>});<br></code></pre></div></body></html>

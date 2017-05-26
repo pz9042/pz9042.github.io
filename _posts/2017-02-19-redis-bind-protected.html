@@ -1,0 +1,28 @@
+---
+layout: article
+title:  "redis bind protected-mode"
+tags: redis
+categories: redis
+date: 2017-02-19 21:56:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="redis-bind-protected-mode">redis bind protected-mode</h3>
+
+<p>redis通过bind命令来限制ip访问，如果需要限制多个则：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-ini hljs">bind 192.168.3.130 127.0.0.1 ::1<br></code></pre>
+
+<p>如果有多个bind，则取最后一行。同时，自3.2以来，redis新增了<code>protected-mode</code>配置参数，官方关于他的描述为</p>
+
+<ul><li>配置文件中，没有通过bind来绑定ip</li>
+<li>redis没有开启密码</li>
+</ul>
+
+<p>也就是说，如果配置文件没有通过bind来限制ip并且没有开启密码，则  protected-mode 为yes时，将只允许回环地址(127.0.0.1)来连接，yes也是 protected-mode的默认值。</p></div></body></html>

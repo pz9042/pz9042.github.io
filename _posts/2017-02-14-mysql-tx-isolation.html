@@ -1,0 +1,50 @@
+---
+layout: article
+title:  "mysql隔离级别以及mvcc理解"
+tags: MySQL isolation
+categories: mysql
+date: 2017-02-14 21:31:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="mysql隔离级别以及mvcc理解">mysql隔离级别以及mvcc理解</h3>
+
+<p>MySQL的隔离级别有 <a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-transaction-isolation-levels.html#isolevel_read-uncommitted" target="_blank">READ UNCOMMITTED</a>, <a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-transaction-isolation-levels.html#isolevel_read-committed" target="_blank">READ COMMITTED</a>, <a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-transaction-isolation-levels.html#isolevel_repeatable-read" target="_blank">REPEATABLE READ</a>, and <a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-transaction-isolation-levels.html#isolevel_serializable" target="_blank">SERIALIZABLE</a> 分别为读取未提交、读取提交、可重复读、串行化。这里主要讲下这四种模式对我们之前理解的排它锁、共享锁的影响。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">session A<br>mysql&gt; <span class="hljs-keyword">begin</span>;<br>mysql&gt; <span class="hljs-keyword">update</span> member_info <span class="hljs-keyword">set</span> sub_desc=<span class="hljs-string">'gengxin2'</span> <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br></code></pre>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">session B<br>mysql&gt; <span class="hljs-keyword">begin</span>;<br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> member_info <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br></code></pre>
+
+<p>对于以上操作，我们一般理解为 session B将会被阻塞，直到session A释放锁。然而实际操作中，确发现，并不是如此。先以MySQL默认的  <code>REPEATABLE READ</code>级别为例</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">session A<br><br>mysql&gt; <span class="hljs-keyword">begin</span>;<br>mysql&gt; <span class="hljs-keyword">update</span> member_info <span class="hljs-keyword">set</span> sub_desc=<span class="hljs-string">'rr'</span> <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br><br>session B<br></code></pre>
+
+<p>REPEATABLE READ模式</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">SET</span> <span class="hljs-keyword">TRANSACTION</span> <span class="hljs-keyword">ISOLATION</span> <span class="hljs-keyword">LEVEL</span> REPEATABLE <span class="hljs-keyword">READ</span>;<br>mysql&gt; <span class="hljs-keyword">begin</span>;<br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> member_info <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| id | name | sex | add_time | sub_desc |<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| 6 | gaoxiaosong | nan | 3 | gengxin |<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>mysql&gt; <span class="hljs-keyword">commit</span>;<br></code></pre>
+
+<p>READ COMMITTED 模式</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">SET</span> <span class="hljs-keyword">TRANSACTION</span> <span class="hljs-keyword">ISOLATION</span> <span class="hljs-keyword">LEVEL</span> <span class="hljs-keyword">READ</span> COMMITTED;<br>mysql&gt; <span class="hljs-keyword">begin</span>;<br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> member_info <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| id | name | sex | add_time | sub_desc |<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| 6 | gaoxiaosong | nan | 3 | gengxin |<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>mysql&gt; <span class="hljs-keyword">commit</span>;<br></code></pre>
+
+<p>READ UNCOMMITTED 模式</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">SET</span> <span class="hljs-keyword">TRANSACTION</span> <span class="hljs-keyword">ISOLATION</span> <span class="hljs-keyword">LEVEL</span> <span class="hljs-keyword">READ</span> UNCOMMITTED;<br>mysql&gt; <span class="hljs-keyword">begin</span>;<br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> member_info <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| id | name | sex | add_time | sub_desc |<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| 6 | gaoxiaosong | nan | 3 | rr | //注意该值跟之前模式的不一样<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>mysql&gt; <span class="hljs-keyword">commit</span>;<br></code></pre>
+
+<p>SERIALIZABLE 模式</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">SET</span> <span class="hljs-keyword">session</span> <span class="hljs-keyword">TRANSACTION</span> <span class="hljs-keyword">ISOLATION</span> <span class="hljs-keyword">LEVEL</span> <span class="hljs-keyword">SERIALIZABLE</span>;<br>mysql&gt; <span class="hljs-keyword">begin</span>;<br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> member_info <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br>ERROR 1205 (HY000): <span class="hljs-keyword">Lock</span> <span class="hljs-keyword">wait</span> <span class="hljs-keyword">timeout</span> exceeded; try restarting transaction<br></code></pre></div></body></html>

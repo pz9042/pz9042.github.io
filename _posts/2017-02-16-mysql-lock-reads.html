@@ -1,0 +1,57 @@
+---
+layout: article
+title:  "MySQL Locking Reads"
+tags: MySQL lock
+categories: mysql
+date: 2017-02-16 22:17:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="mysql-locking-reads">MySQL Locking Reads</h3>
+
+<p>Locking Reads分两种，其一： <code>SELECT ... LOCK IN SHARE MODE</code> 、其二： <code>SELECT ... FOR UPDATE</code>，先来测试下share mode,一下测试时在<code>RR</code>隔离级别下进行。 <br>
+session A：</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">show</span> <span class="hljs-keyword">variables</span> <span class="hljs-keyword">like</span> <span class="hljs-string">'%tx%'</span>;<br>+<span class="hljs-comment">---------------+-----------------+</span><br>| Variable_name | Value |<br>+<span class="hljs-comment">---------------+-----------------+</span><br>| tx_isolation | REPEATABLE-READ |<br>| tx_read_only | OFF |<br>+<span class="hljs-comment">---------------+-----------------+</span><br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> member_info <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| id | name | sex | add_time | sub_desc |<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| 6 | gaoxiaosong | nan | 3 | gengxin |<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>1 row in <span class="hljs-keyword">set</span> (<span class="hljs-number">0.00</span> sec)<br><br>mysql&gt; <span class="hljs-keyword">begin</span>;<br>Query OK, 0 rows affected (0.00 sec)<br><br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> member_info <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span> <span class="hljs-keyword">lock</span> <span class="hljs-keyword">in</span> <span class="hljs-keyword">share</span> <span class="hljs-keyword">mode</span>; //指定share mode<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| id | name | sex | add_time | sub_desc |<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>| 6 | gaoxiaosong | nan | 3 | gengxin |<br>+<span class="hljs-comment">----+-------------+------+----------+----------+</span><br>1 row in <span class="hljs-keyword">set</span> (<span class="hljs-number">0.00</span> sec)<br></code></pre>
+
+<p>ok，开启事务执行select后，故意不commit，同时另外开启一个session。 <br>
+session B：</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs"><br>mysql&gt; <span class="hljs-keyword">begin</span>;<br>mysql&gt; <span class="hljs-keyword">update</span> member_info <span class="hljs-keyword">set</span> sub_desc=<span class="hljs-string">'share mode'</span> <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br>ERROR 1205 (HY000): <span class="hljs-keyword">Lock</span> <span class="hljs-keyword">wait</span> <span class="hljs-keyword">timeout</span> exceeded; try restarting transaction<br>mysql&gt;<br></code></pre>
+
+<p>在超时之前，我们在开一个会话</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> INNODB_LOCKS;<br>+<span class="hljs-comment">------------------------+-----------------+-----------+-----------+----------------------+------------+------------+-----------+----------+-----------+</span><br>| lock_id | lock_trx_id | lock_mode | lock_type | lock_table | lock_index | lock_space | lock_page | lock_rec | lock_data |<br>+<span class="hljs-comment">------------------------+-----------------+-----------+-----------+----------------------+------------+------------+-----------+----------+-----------+</span><br>| 6171:52:3:8 | 6171 | X | RECORD | `test`.`member_info` | PRIMARY | 52 | 3 | 8 | 6 |<br>| 421902528408288:52:3:8 | 421902528408288 | S | RECORD | `test`.`member_info` | PRIMARY | 52 | 3 | 8 | 6 |<br>+<span class="hljs-comment">------------------------+-----------------+-----------+-----------+----------------------+------------+------------+-----------+----------+-----------+</span><br><br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> INNODB_LOCK_WAITS;<br>+<span class="hljs-comment">-------------------+-------------------+-----------------+------------------------+</span><br>| requesting_trx_id | requested_lock_id | blocking_trx_id | blocking_lock_id |<br>+<span class="hljs-comment">-------------------+-------------------+-----------------+------------------------+</span><br>| 6171 | 6171:52:3:8 | 421902528408288 | 421902528408288:52:3:8 |<br>+<span class="hljs-comment">-------------------+-------------------+-----------------+------------------------+</span><br></code></pre>
+
+<p>可以看到，select 已经对数据6加了S锁，而update试图对6加<code>X</code>锁，但是没成功，一直在等待，最后超时。两个会话全部执行回滚，再来试下以下情况。 <br>
+session B</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">begin</span>;<br>Query OK, 0 rows affected (0.00 sec)<br><br>mysql&gt; <span class="hljs-keyword">update</span> member_info <span class="hljs-keyword">set</span> sub_desc=<span class="hljs-string">'share mode'</span> <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span>;<br>Query OK, 1 row affected (0.00 sec)<br>Rows matched: 1 Changed: 1 Warnings: 0<br>mysql&gt;<br></code></pre>
+
+<p>session A</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">begin</span>;<br>Query OK, 0 rows affected (0.00 sec)<br><br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> member_info <span class="hljs-keyword">where</span> <span class="hljs-keyword">id</span>=<span class="hljs-number">6</span> <span class="hljs-keyword">lock</span> <span class="hljs-keyword">in</span> <span class="hljs-keyword">share</span> <span class="hljs-keyword">mode</span>;<br>ERROR 1205 (HY000): <span class="hljs-keyword">Lock</span> <span class="hljs-keyword">wait</span> <span class="hljs-keyword">timeout</span> exceeded; try restarting transaction<br></code></pre>
+
+<p>同样在会话A超时前，查看锁的情况</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> INNODB_LOCKS;<br>+<span class="hljs-comment">-------------+-------------+-----------+-----------+----------------------+------------+------------+-----------+----------+-----------+</span><br>| lock_id | lock_trx_id | lock_mode | lock_type | lock_table | lock_index | lock_space | lock_page | lock_rec | lock_data |<br>+<span class="hljs-comment">-------------+-------------+-----------+-----------+----------------------+------------+------------+-----------+----------+-----------+</span><br>| 6173:52:3:9 | 6173 | S | RECORD | `test`.`member_info` | PRIMARY | 52 | 3 | 9 | 6 |<br>| 6172:52:3:9 | 6172 | X | RECORD | `test`.`member_info` | PRIMARY | 52 | 3 | 9 | 6 |<br>+<span class="hljs-comment">-------------+-------------+-----------+-----------+----------------------+------------+------------+-----------+----------+-----------+</span><br>2 rows in <span class="hljs-keyword">set</span> (<span class="hljs-number">0.00</span> sec)<br><br>mysql&gt; <span class="hljs-keyword">select</span> * <span class="hljs-keyword">from</span> INNODB_LOCK_WAITS;<br>+<span class="hljs-comment">-------------------+-------------------+-----------------+------------------+</span><br>| requesting_trx_id | requested_lock_id | blocking_trx_id | blocking_lock_id |<br>+<span class="hljs-comment">-------------------+-------------------+-----------------+------------------+</span><br>| 6173 | 6173:52:3:9 | 6172 | 6172:52:3:9 |<br>+<span class="hljs-comment">-------------------+-------------------+-----------------+------------------+</span><br></code></pre>
+
+<p>这次是B对数据加了X锁，而A尝试获取<code>S</code>锁，但是被阻塞了。</p>
+
+<p>总结：</p>
+
+<ul><li><code>share mode</code>：阻塞其他写请求(包括删除)、等待尚未commit的写请求。也就是对数据加S锁</li>
+<li><code>for update</code>： 阻塞其他写请求(包括删除)、等待尚未commit的写请求。不同的是，for update会阻塞其他会话的 select lock in share mode，并且在某些隔离级别下回阻塞其他的读请求。也就是对数据加X锁。</li>
+</ul>
+
+<p>官方文档：<a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-locking-reads.html" target="_blank">Locking Reads</a></p></div></body></html>

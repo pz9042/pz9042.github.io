@@ -1,0 +1,20 @@
+---
+layout: article
+title:  "python笔记"
+tags: linux man
+categories: 涨姿势
+date: 2016-12-27 16:54:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="linux-man在指定目录下查找manual">linux man在指定目录下查找manual</h3>
+
+<p>通过configure或者cmake编译的软件，一般会通过prefix参数指定安装目录，这样的话，当需要man 编译得到的二进制命令时，是得不到结果的。可以通过-M参数，让man在我们指定的目录下去查找manual，如：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz:/usr/<span class="hljs-built_in">local</span>/inotify-tools/share/man$ man -M <span class="hljs-variable">$PWD</span> inotifywait<br></code></pre></div></body></html>

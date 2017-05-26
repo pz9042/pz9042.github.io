@@ -1,0 +1,24 @@
+---
+layout: article
+title:  "mac-sudo执行命令仍然报-operation-not-permitted"
+tags: mac sudo
+categories: 奇难杂症
+date: 2017-01-06 23:11:42
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="mac-sudo执行命令仍然报-operation-not-permitted">Mac sudo执行命令仍然报 Operation not permitted</h3>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pzdeMacBook-Pro:~ pz$ sudo ln <span class="hljs-_">-s</span> /usr/<span class="hljs-built_in">local</span>/mysql/bin/mysql /usr/bin/mysql<br>ln: /bin/mysql: Operation not permitted<br>pzdeMacBook-Pro:~ pz$<br></code></pre>
+
+<p>这是因为苹果在OS X 10.11中引入的<code>SIP</code>特性使得即使加了sudo（也就是具有root权限）也无法修改系统级的目录，其中就包括了/usr/bin。要解决这个问题有两种做法：一种是比较不安全的就是关闭<code>SIP</code>，也就是<code>rootless</code>特性；另一种是将本要链接到/usr/bin下的改链接到/usr/local/bin下就好了。</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pzdeMacBook-Pro:~ pz$ sudo ln <span class="hljs-_">-s</span> /usr/<span class="hljs-built_in">local</span>/mysql/bin/mysql /usr/<span class="hljs-built_in">local</span>/bin/mysql<br>pzdeMacBook-Pro:~ pz$<br></code></pre>
+
+<p>问题答案摘自<a href="https://segmentfault.com/q/1010000003958979/a-1020000003960387" target="_blank">Mac上搭建scheme环境，终端报出Operation not permitted</a></p></div></body></html>

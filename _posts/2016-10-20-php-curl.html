@@ -1,0 +1,18 @@
+---
+layout: article
+title:  "php curl"
+tags: php curl
+categories: 代码块
+date: 2016-10-20 18:43:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="php-curl">php curl</h3>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-meta">&lt;?php</span><br><br><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">get</span><span class="hljs-params">( $url ,$header = array<span class="hljs-params">()</span> , $return_header = false ,$gzip = true )</span></span>{<br><br>$ch = curl_init();<br><br>  curl_setopt($ch, CURLOPT_TIMEOUT, <span class="hljs-number">60</span>);<br>  curl_setopt($ch, CURLOPT_RETURNTRANSFER, <span class="hljs-keyword">true</span>);<br>  curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, <span class="hljs-number">2</span> );<br>  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, <span class="hljs-keyword">false</span>);<br>  curl_setopt($ch, CURLOPT_HEADER, <span class="hljs-keyword">false</span> );<br>  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, <span class="hljs-keyword">true</span> );<br>  curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4 );<br>  <span class="hljs-keyword">if</span>( $gzip ){<br>  $header[] = <span class="hljs-string">'Accept-Encoding:gzip'</span>;<br>  curl_setopt($ch, CURLOPT_ENCODING, <span class="hljs-string">"gzip"</span>);<br>  }<br>  <span class="hljs-keyword">if</span>( $header ){<br><br>  curl_setopt ( $ch, CURLOPT_HTTPHEADER, $header );<br>  }<br><br>  curl_setopt ($ch, CURLOPT_COOKIEFILE, COOKIE_FILE );<br>  curl_setopt ($ch, CURLOPT_COOKIEJAR, COOKIE_FILE );<br><br>  curl_setopt($ch, CURLOPT_URL, $url );<br>  <span class="hljs-comment">//print_r(curl_getinfo($ch));</span><br>  $content = curl_exec($ch);<br><br>  <span class="hljs-keyword">if</span>( $return_header ){<br>  <span class="hljs-keyword">return</span> curl_getinfo($ch);<br>  }<span class="hljs-keyword">else</span>{<br>  <span class="hljs-keyword">return</span> $content;<br>  }<br><br>  <span class="hljs-comment">//var_dump($content);exit;</span><br>  <span class="hljs-keyword">return</span> $content;<br><br>}<br><br><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">post</span><span class="hljs-params">( $url ,$parameters ,$header = array<span class="hljs-params">()</span> )</span></span>{<br><br>  $ch = curl_init();<br><br>  curl_setopt($ch, CURLOPT_TIMEOUT, <span class="hljs-number">60</span>);<br>  curl_setopt($ch, CURLOPT_RETURNTRANSFER, <span class="hljs-keyword">true</span>);<br>  curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, <span class="hljs-number">2</span> );<br>  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, <span class="hljs-keyword">false</span>);<br>  curl_setopt($ch, CURLOPT_HEADER, <span class="hljs-keyword">false</span>);<br>  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, <span class="hljs-keyword">true</span> );<br>  curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4 );<br><br>  <span class="hljs-keyword">if</span>( $header ){<br>  curl_setopt ( $ch, CURLOPT_HTTPHEADER, $header );<br>  }<br><br>  curl_setopt ($ch, CURLOPT_COOKIEFILE, COOKIE_FILE );<br><br>  curl_setopt ($ch, CURLOPT_COOKIEJAR, COOKIE_FILE );<br><br>  curl_setopt($ch, CURLOPT_URL, $url );<br>  curl_setopt($ch, CURLOPT_POST, <span class="hljs-keyword">true</span> );<br><br>  is_array( $parameters ) &amp;&amp; $parameters = http_build_query( $parameters );<br>  curl_setopt($ch, CURLOPT_POSTFIELDS, $parameters );<br>  <span class="hljs-comment">//print_r(curl_getinfo($ch));</span><br>  $content = curl_exec($ch);<br>  <span class="hljs-keyword">return</span> $content;<br><br>}<br></code></pre></div></body></html>

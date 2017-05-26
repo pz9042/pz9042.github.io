@@ -1,0 +1,81 @@
+---
+layout: article
+title:  "通过ssh反向代理实现连接内网服务器"
+tags: ssh proxy
+categories: 拓展
+date: 2017-01-05 17:30:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="通过ssh反向代理实现连接内网服务器">通过ssh反向代理实现连接内网服务器</h3>
+
+<p>先假设我们有A、B两台服务器，A是外网，B是一台内网服务器（假设一下所有服务器都已经安装了ssh、sshd）</p>
+
+<h3 id="服务器描述">服务器描述</h3>
+
+<table>
+<thead>
+<tr>
+  <th align="center">代指</th>
+  <th align="center">ip</th>
+  <th align="center">描述</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td align="center">A</td>
+  <td align="center">196.171.89.136</td>
+  <td align="center">外网</td>
+</tr>
+<tr>
+  <td align="center">B</td>
+  <td align="center">192.168.237.128</td>
+  <td align="center">内网</td>
+</tr>
+<tr>
+  <td align="center">C</td>
+  <td align="center">192.168.237.130</td>
+  <td align="center">内网</td>
+</tr>
+</tbody></table>
+
+
+<p>我们第一步想实现的是，在外网上可以连接B。首先在A服务器上监听一个新的端口2221</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">[pengzhen@599454 ~]$ sudo vim /etc/ssh//sshd_config<br>ListenAddress 0.0.0.0:22<br>ListenAddress 0.0.0.0:2221<br>[pengzhen@599454 ~]$ sudo /etc/init.d/sshd restart<br>[pengzhen@599454 ~]$ netstat -tnl |grep 2221<br>tcp 0 0 0.0.0.0:2221 0.0.0.0:* LISTEN<br></code></pre>
+
+<p>然后在B服务器执行一下命令</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">[root@pz-vm nc]<span class="hljs-comment"># ssh -NfR 1235:127.0.0.1:22 pengzhen@196.171.89.136 -p2221</span><br></code></pre>
+
+<p>在输入密码后，A服务器会开始监听端口1235。这段代码的意思是，A服务器将1235端口接收到的数据都转发给B服务器的22端口。在A服务器，用ssh连接本地1235端口。</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">[pengzhen@599454 ~]$ ssh 127.0.0.1 -p 1235<br></code></pre>
+
+<p>这样就可以在A服务器上连接B服务器了。但是，如果我们想通过C连接B了(假设两台服务器不在一个内网段)，我们直接在C通过 ssh 196.171.89.136 -p 1235会得到</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz:~$ ssh pengzhen@196.171.89.136 -p 1234<br>ssh: connect to host 196.171.89.136 port 1234: Connection refused<br></code></pre>
+
+<p>在A服务器查看，可以发现1235端口是只绑定在本机的，那如何能让其他机器连接该端口了</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">[pengzhen@599454 ~]$ netstat -an|grep 1235<br>tcp 0 0 127.0.0.1:1235 0.0.0.0:* LISTEN<br>tcp 0 0 ::1:1235 :::* LISTEN<br>[pengzhen@599454 ~]$ sudo vim /etc/ssh/sshd_config<br>//加上该选项<br>GatewayPorts yes<br>[pengzhen@599454 ~]$ sudo /etc/init.d/sshd restart<br></code></pre>
+
+<p>在B服务器上执行</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">[root@pz-vm nc]<span class="hljs-comment"># ssh -g -NfR 1235:127.0.0.1:22 pengzhen@196.171.89.136 -p2221</span><br>pengzhen@196.171.89.136<span class="hljs-string">'s password:<br>[root@pz-vm nc]# Warning: remote port forwarding failed for listen port 1235</span><br></code></pre>
+
+<p>会发现报错，这是因为，ssh绑定端口时，不能利用已开启的端口，必须重新开一个端口，或者杀死原来的端口。杀死原接口，重新执行一次命令，然后在C服务器再次执行，这样就可以连接到B了。 <br>
+<code>这里要注意一个问题，就是ssh是跑在B服务器上的，我们这里设定的场景就是其他内网连接B，假设B上的ssh进程异常退出了，那我们就无法连接B了，这种情况下可以用Autossh来监控该ssh进程，异常退出时可以再次启动进程</code></p></div></body></html>
