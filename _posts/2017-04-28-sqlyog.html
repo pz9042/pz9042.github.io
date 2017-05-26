@@ -1,0 +1,20 @@
+---
+layout: article
+title:  "sqlyog执行创建存储过程或函数的坑"
+tags: MySQL sqlyog
+categories: 奇难杂症
+date: 2017-04-28 15:37:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="sqlyog-执行创建存储过程或函数的坑">SQLyog 执行创建存储过程或函数的坑</h3>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs"><span class="hljs-keyword">DROP</span> <span class="hljs-keyword">FUNCTION</span> <span class="hljs-keyword">IF</span> <span class="hljs-keyword">EXISTS</span> mycat_seq_currval;<br> DELIMITER $<br><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">FUNCTION</span> mycat_seq_currval(seq_name <span class="hljs-built_in">VARCHAR</span>(<span class="hljs-number">50</span>)) <span class="hljs-keyword">RETURNS</span> <span class="hljs-built_in">VARCHAR</span>(<span class="hljs-number">64</span>) <span class="hljs-keyword">CHARSET</span> utf8<br><span class="hljs-keyword">DETERMINISTIC</span><br><span class="hljs-keyword">BEGIN</span><br><span class="hljs-keyword">DECLARE</span> retval <span class="hljs-built_in">VARCHAR</span>(<span class="hljs-number">64</span>);<br><span class="hljs-keyword">SET</span> retval=<span class="hljs-string">"-999999999,null"</span>;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">CONCAT</span>(<span class="hljs-keyword">CAST</span>(current_value <span class="hljs-keyword">AS</span> <span class="hljs-built_in">CHAR</span>),<span class="hljs-string">","</span>,<span class="hljs-keyword">CAST</span>(<span class="hljs-keyword">increment</span> <span class="hljs-keyword">AS</span> <span class="hljs-built_in">CHAR</span>)) <span class="hljs-keyword">INTO</span> retval <span class="hljs-keyword">FROM</span> MYCAT_SEQUENCE <span class="hljs-keyword">WHERE</span> <span class="hljs-keyword">NAME</span> = seq_name;<br>RETURN retval;<br><span class="hljs-keyword">END</span> $<br>DELIMITER ;<br><br>错误代码： 1193<br>Unknown system variable 'retval'<br></code></pre>
+
+<p>看了半天，没发现哪里写错了，语句也都没问题。后来才发现是  <code>DELIMITER $</code> 这行的行首敲了个空格。。</p></div></body></html>

@@ -1,0 +1,28 @@
+---
+layout: article
+title:  "php使用sphinx扩展链接sphinx"
+tags: sphinx
+categories: 奇难杂症
+date: 2017-04-01 13:38:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="php使用sphinx扩展链接sphinx-searchd">PHP使用sphinx扩展链接sphinx searchd</h3>
+
+<p>首先，下载PHP的扩展包，<a href="http://pecl.php.net/package/sphinx" target="_blank">安装包地址</a>，同时，要知道连接的sphinx searchd的版本是什么，在我们自己的机器上也要下载这个安装包，<a href="http://sphinxsearch.com/downloads/archive/" target="_blank">sphinx下载地址</a> 这里可以下载各个版本。先解压sphinx的服务端tar文件。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs"> tar sphinx-2.0.2-beta.tar.gz<br> <span class="hljs-built_in">cd</span> sphinx-2.0.2-beta<br><span class="hljs-built_in">cd</span> api/libsphinxclient/<br>./configure --prefix=/usr/<span class="hljs-built_in">local</span>/libsphinxclient<br></code></pre>
+
+<p>然后安装PHP的扩展，PHP的扩展版本关系应该不大，看下<code>changelog</code>中有没有要求限制的。</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs"> wget http://pecl.php.net/get/sphinx-1.2.0.tgz<br> tar zxvf sphinx-1.2.0.tgz<br> <span class="hljs-built_in">cd</span> sphinx-1.2.0<br> ./configure --with-php-config=/usr/<span class="hljs-built_in">local</span>/php/bin/php-config --with-sphinx=/usr/<span class="hljs-built_in">local</span>/libsphinxclient<br> make &amp;&amp; make install<br></code></pre>
+
+<p>然后就是安装PHP扩展的方法操作了，记得重启PHP-FPM。</p>
+
+<p>这里要注意的就是，sphinx的扩展是依赖 <code>libsphinxclient</code>的，所以一定要确保客户端的 libsphinxclient不能高于服务端的版本，最好保持一致。</p></div></body></html>

@@ -1,0 +1,30 @@
+---
+layout: article
+title:  "chrome下consolelog打印数组json对象等类型时bug"
+tags: chrome console.log
+categories: js
+date: 2017-02-21 19:53:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="chrome-下consolelog打印数组json对象等类型时bug">chrome 下console.log打印数组、json对象等类型时bug</h3>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-javascript hljs"><span class="hljs-keyword">var</span> data = { <span class="hljs-string">'name'</span> :<span class="hljs-string">'angnelbaby'</span> ,<span class="hljs-string">'age'</span>:<span class="hljs-number">27</span> }<br><span class="hljs-built_in">console</span>.log( data );<br>data.name = <span class="hljs-string">"liutao"</span>;<br><span class="hljs-built_in">console</span>.log( data );<br><br>期望输出值<br>age:<span class="hljs-number">27</span><br>name:<span class="hljs-string">"angnelbaby"</span><br><br>age:<span class="hljs-number">27</span><br>name:<span class="hljs-string">"liutao"</span><br><br>然而实际输出是：<br>age:<span class="hljs-number">27</span><br>name:<span class="hljs-string">"liutao"</span><br><br>age:<span class="hljs-number">27</span><br>name:<span class="hljs-string">"liutao"</span><br></code></pre>
+
+<p>其原因在于chrome对可变类型的变量输出做了不合适的优化</p>
+
+<ul><li>console.log()传入的参数如果指向一个<code>可变对象（数组、对象）</code>，那么它会默默地记录下这个引用；</li>
+<li>在你查看这个输出结果的时候，才会读取这个对象，并把相关属性和值显示出来。</li>
+</ul>
+
+<p>我们可以通过将这些类型的变量转成字符串，在专为原始类型来解决这个bug</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-javascript hljs"><span class="hljs-keyword">var</span> data = { <span class="hljs-string">'name'</span> :<span class="hljs-string">'angnelbaby'</span> ,<span class="hljs-string">'age'</span>:<span class="hljs-number">27</span> }<br><span class="hljs-built_in">console</span>.log( <span class="hljs-built_in">JSON</span>.parse( <span class="hljs-built_in">JSON</span>.stringify( data ) ) );<br>data.name = <span class="hljs-string">"liutao"</span>;<br><span class="hljs-built_in">console</span>.log( <span class="hljs-built_in">JSON</span>.parse( <span class="hljs-built_in">JSON</span>.stringify( data ) ) );<br></code></pre></div></body></html>

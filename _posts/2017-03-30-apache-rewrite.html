@@ -1,0 +1,32 @@
+---
+layout: article
+title:  "Apache php5.6 rewrite规则失效"
+tags: apache rewrite
+categories: 奇难杂症
+date: 2017-03-30 11:10:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="apache-php56-rewrite规则失效">Apache php5.6 rewrite规则失效</h3>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-apache hljs"><span class="hljs-attribute"><span class="hljs-nomarkup">RewriteRule</span></span> ^(.*)$ index.php/<span class="hljs-number">$1</span><span class="hljs-meta"> [QSA,L]</span><br></code></pre>
+
+<p>但是今天，一同事发现，在Apache2.4+php 5.6下，访问报  <code>No input file specified</code>，在切换到该环境后，通过phpinfo发现，Server API变成了<code>CGI/FastCGI</code>，而不是5.4下的 <code>Apache2.0 handle</code>，猜测是cgi的改变导致的。之后改成：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-apache hljs"><span class="hljs-attribute"><span class="hljs-nomarkup">RewriteRule</span></span> ^(.*)$ /index.php/<span class="hljs-number">$1</span><span class="hljs-meta"> [L,R]</span><br></code></pre>
+
+<p>通过这种跳转，倒是可以。感觉可能是php5.6的bug造成的。在网上找到一段配置：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-apache hljs"><span class="hljs-attribute"><span class="hljs-nomarkup">RewriteRule</span></span> ^(.*)$ index.php<span class="hljs-meta"> [L,QSA,E=PATH_INFO:$1]</span><br></code></pre>
+
+<p>通过设置变量就OK了。</p></div></body></html>

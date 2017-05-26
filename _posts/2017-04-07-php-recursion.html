@@ -1,0 +1,40 @@
+---
+layout: article
+title:  "消除递归导致的栈溢出限制"
+tags: recursion php
+categories: php
+date: 2017-04-07 14:18:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="消除递归导致的栈溢出限制">消除递归导致的栈溢出限制</h3>
+
+<p>对于计算阶乘，PHP可用如下递归函数计算：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-meta">&lt;?php</span><br><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">fact</span><span class="hljs-params">( $num )</span></span>{<br>    <span class="hljs-keyword">if</span>( $num ==<span class="hljs-number">1</span> ) <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br>    <span class="hljs-keyword">return</span> $num*fact( $num <span class="hljs-number">-1</span> );<br>}<br></code></pre>
+
+<p>然而，在调用 fact(256)或者比256还大的数的阶乘时，PHP会报如下错误：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs">Fatal error: Maximum <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">nesting</span> <span class="hljs-title">level</span> <span class="hljs-title">of</span> '256' <span class="hljs-title">reached</span>, <span class="hljs-title">aborting</span>!</span><br></code></pre>
+
+<p>大概意思是，PHP对函数嵌套调用有限制，最大值为<code>255</code>，那么如何消除这种限制了，先用伪递归来试下 (<em><code>在函数返回的时候，调用自身本身，并且，return语句不能包含表达式。这样，编译器或者解释器就可以把尾递归做优化，使递归本身无论调用多少次，都只占用一个栈帧，不会出现栈溢出的情况</code></em>)。</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">fact_tail</span><span class="hljs-params">( $num ,$product )</span></span>{<br>    <span class="hljs-keyword">if</span>( $num&lt;=<span class="hljs-number">1</span> ){<br>        <span class="hljs-keyword">return</span> $product;<br>    }<br>    <span class="hljs-keyword">return</span> fact_tail( $num<span class="hljs-number">-1</span> ,$product*$num );<br>}<br></code></pre>
+
+<p>依然报错，看来，PHP并没有对尾递归进行优化。在看下面的代码：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">fact_iter</span><span class="hljs-params">( $num ,$product )</span></span>{<br><br>    <span class="hljs-keyword">if</span>( $num == <span class="hljs-number">0</span> ){<br>        <span class="hljs-keyword">return</span> $product;<br>    }<br>    <span class="hljs-keyword">return</span> <span class="hljs-function"><span class="hljs-keyword">function</span><span class="hljs-params">()</span> <span class="hljs-title">use</span> <span class="hljs-params">( $num , $product )</span> </span>{<br>        <span class="hljs-keyword">return</span> fact_iter( $num <span class="hljs-number">-1</span> ,$product*$num );<br>    };<br>}<br><br><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">trampoline</span><span class="hljs-params">( $num )</span></span>{<br><br>    $return = fact_iter( $num ,<span class="hljs-number">1</span> );<br><br>    <span class="hljs-keyword">while</span>( is_callable( $return ) ){<br>        $return = $return();<br><br>    }<br>    print_r( $return );<br>}<br><br><span class="hljs-keyword">echo</span> trampoline( <span class="hljs-number">256</span> ,<span class="hljs-number">1</span> );<br></code></pre>
+
+<p>这样，代码就不会报错了，而且比之前的函数，速度也不低。这种通过高阶函数，可以绕开函数栈的限制。</p></div></body></html>

@@ -1,0 +1,26 @@
+---
+layout: article
+title:  "关闭redis服务进程"
+tags: redis
+categories: redis
+date: 2017-04-06 11:47:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="关闭redis服务进程">关闭redis服务进程</h3>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pzdeMacBook-Pro:redis pz$ ./redis-server ./redis.conf &amp;<br><br><span class="hljs-comment">#tailf redis.log</span><br>[53403] 06 Apr 23:45:57.465 * Increased maximum number of open files to 10032 (it was originally <span class="hljs-built_in">set</span> to 4864).<br>  _._<br>  _.-``__ <span class="hljs-string">''</span>-._<br>  _.-`` `. `_. <span class="hljs-string">''</span>-._ Redis 2.8.19 (00000000/0) 64 bit<br>  .-`` .-```. ```\/ _.,_ <span class="hljs-string">''</span>-._<br> ( <span class="hljs-string">' , .-` | `, ) Running in stand alone mode<br> |`-._`-...-` __...-.``-._|'</span>` _.-<span class="hljs-string">'| Port: 6379<br> | `-._ `._ / _.-'</span> | PID: 53403<br>  `-._ `-._ `-./ _.-<span class="hljs-string">' _.-'</span><br> |`-._`-._ `-.__.-<span class="hljs-string">' _.-'</span>_.-<span class="hljs-string">'|<br> | `-._`-._ _.-'</span>_.-<span class="hljs-string">' | http://redis.io<br>  `-._ `-._`-.__.-'</span>_.-<span class="hljs-string">' _.-'</span><br> |`-._`-._ `-.__.-<span class="hljs-string">' _.-'</span>_.-<span class="hljs-string">'|<br> | `-._`-._ _.-'</span>_.-<span class="hljs-string">' |<br>  `-._ `-._`-.__.-'</span>_.-<span class="hljs-string">' _.-'</span><br>  `-._ `-.__.-<span class="hljs-string">' _.-'</span><br>  `-._ _.-<span class="hljs-string">'<br>  `-.__.-'</span><br><br>[53403] 06 Apr 23:45:57.466 <span class="hljs-comment"># Server started, Redis version 2.8.19</span><br>[53403] 06 Apr 23:45:57.466 * DB loaded from disk: 0.000 seconds<br>[53403] 06 Apr 23:45:57.467 * The server is now ready to accept connections on port 6379<br></code></pre>
+
+<p>用<code>kill</code>的方式杀掉进程：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pzdeMacBook-Pro:redis pz$ sudo <span class="hljs-built_in">kill</span> -9 53395<br><br><span class="hljs-comment">#redis.log内容毫无变化，重新开启redis进程，换一种方式</span><br><br>pzdeMacBook-Pro:redis pz$ sudo <span class="hljs-built_in">kill</span> 53386<br><span class="hljs-comment">#redis.log有以下内容，可以知道，在进程退出前，redis将数据刷新到了硬盘中</span><br>[53386 | signal handler] (1491493525) Received SIGTERM scheduling shutdown...<br>[53386] 06 Apr 23:45:25.764 <span class="hljs-comment"># User requested shutdown...</span><br>[53386] 06 Apr 23:45:25.764 * Saving the final RDB snapshot before exiting.<br>[53386] 06 Apr 23:45:25.764 * DB saved on disk<br>[53386] 06 Apr 23:45:25.764 <span class="hljs-comment"># Redis is now ready to exit, bye bye...</span><br><br>pzdeMacBook-Pro:redis pz$ ./redis-cli shutdown<br><span class="hljs-comment">#跟kill pid内容有一些小差别</span><br>[53528] 06 Apr 23:53:35.141 <span class="hljs-comment"># User requested shutdown...</span><br>[53528] 06 Apr 23:53:35.141 * Saving the final RDB snapshot before exiting.<br>[53528] 06 Apr 23:53:35.143 * DB saved on disk<br>[53528] 06 Apr 23:53:35.143 <span class="hljs-comment"># Redis is now ready to exit, bye bye...</span><br></code></pre>
+
+<p>综上，关闭redis进程，我们最好使用<code>shutdown</code>这种方式优雅的关闭，如果用 <code>-9</code>标记强行杀掉进程，会有丢失数据的风险。</p></div></body></html>

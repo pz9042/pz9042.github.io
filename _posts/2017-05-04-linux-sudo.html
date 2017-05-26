@@ -1,0 +1,18 @@
+---
+layout: article
+title:  "linux sudo -s"
+tags: linux sudo
+categories: 涨姿势
+date: 2017-05-04 18:13:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="linux-sudo-s">linux sudo -s</h3>
+
+<p><code>sudo</code> 命令表示，执行命令时临时以<code>root</code>的身份执行。sudo -s 表示以root的身份执行后面紧接的命令，如果未指定，则打开一个交互式shell，预设身份为root。简单点讲就是切换到root身份。但该命令有个潜在的坑。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">[pengzhen@pz-centos-128 ~]$ <span class="hljs-built_in">export</span> |grep PATH<br><span class="hljs-built_in">declare</span> -x CLASSPATH=<span class="hljs-string">".:/usr/local/jdk1.8.0_101/lib/dt.jar:/usr/local/jdk1.8.0_101/lib/tools.jar"</span><br><span class="hljs-built_in">declare</span> -x PATH=<span class="hljs-string">"/usr/local/jdk1.8.0_101/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/home/pengzhen/bin"</span><br>[pengzhen@pz-centos-128 ~]$ sudo <span class="hljs-_">-s</span> <span class="hljs-built_in">export</span> |grep PATH<br><span class="hljs-built_in">declare</span> -x PATH=<span class="hljs-string">"/sbin:/bin:/usr/sbin:/usr/bin"</span><br>也就是说，sudo <span class="hljs-_">-s</span>切换的时候，/etc/profile、/etc/bashrc等脚本都未执行。导致定义的变量没有被新的shell读取。同样的，su root 和su - root的区别也跟环境变量有关系，带了 -，新的shell将会读取su后的用户的环境变量，而不带-，则新的shell还是旧用户的环境变量<br></code></pre></div></body></html>

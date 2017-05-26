@@ -1,0 +1,32 @@
+---
+layout: article
+title:  "vmware迁移Ubuntu"
+tags: vmware ubuntu
+categories: 涨姿势
+date: 2017-02-19 13:04:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="vmware迁移ubuntu">vmware迁移Ubuntu</h3>
+
+<p>在将工作的机器上的Ubuntu(16.04)虚拟文件迁移到个人机器上时，发现ip变了，同时，网卡由原来的<code>eth0</code>变成了<code>ens33</code>。修改配置文件：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz:~$ vim /etc/network/interfaces<br>auto lo<br>iface lo inet dhcp<br><br>auto eth0<br>iface eth0 inet static<br>address 192.168.237.130<br>gateway 192.168.237.2<br>netmask 255.255.255.0<br><br>//重启网络<br>pengzhen@pz:~$ vim /etc/network/interfaces<br>pengzhen@pz:~$ sudo /etc/init.d/networking restart<br>[sudo] password <span class="hljs-keyword">for</span> pengzhen:<br>[....] Restarting networking (via systemctl): networking.serviceJob <span class="hljs-keyword">for</span> networking.service failed because the control process exited with error code. See <span class="hljs-string">"systemctl status networking.service"</span> and <span class="hljs-string">"journalctl -xe"</span> <span class="hljs-keyword">for</span> details.<br> failed!<br>pengzhen@pz:~$ sudo /etc/init.d/networking restart<br><br>[....] Restarting networking (via systemctl): networking.serviceJob <span class="hljs-keyword">for</span> networking.service failed because the control process exited with error code. See <span class="hljs-string">"systemctl status networking.service"</span> and <span class="hljs-string">"journalctl -xe"</span> <span class="hljs-keyword">for</span> details.<br> failed!<br>pengzhen@pz:~$ systemctl status networking.service<br>2月 19 01:07:36 pz ifup[3673]: Cannot find device <span class="hljs-string">"eth0"</span><br>2月 19 01:07:36 pz ifup[3673]: Failed to bring up eth0.<br>2月 19 01:07:36 pz systemd[1]: networking.service: Main process exited, code=exited, status=1/FAILURE<br>2月 19 01:07:36 pz systemd[1]: Failed to start Raise network interfaces.<br></code></pre>
+
+<hr>
+
+<p>发现<code>eth0</code>启动不了。猜测应该是mac地址变化导致的问题。但是同时，在系统上未能发现<code>/etc/udev/rules.d/70-persistent-net.rules</code> 文件，经查得知，readhat、centos、Ubuntu在最新版的系统中都将网卡默认改成ens33，可以通过<code>dmesg</code>查询系统将eth0 rename成ens的过程。至于ip，我这里安装的是桌面版系统，通过编辑可以很简单的将ip修改成指定ip。</p>
+
+<p>新的显示器分辨率是1920*1080，但是在Ubuntu的设置里，分辨率并没有这一种，系统默认使用了1920*1200，这样导致在虚拟机全屏时操作会出现问题。我们通过命令来将系统分辨率设置为  1920*1080：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz:~$ xrandr<br>Screen 0: minimum 1 x 1, current 1920 x 1200, maximum 16384 x 16384<br>Virtual1 connected primary 1920x1200+0+0 (normal left inverted right x axis y axis) 0mm x 0mm<br>  1920x1200 60.00*+ 59.88<br>  2560x1600 59.99<br>  1920x1440 60.00<br>  1856x1392 60.00<br>  1792x1344 60.00<br>  1600x1200 60.00<br>  1680x1050 59.95<br>  1400x1050 59.98<br>  1280x1024 60.02<br>  1440x900 59.89<br>  1280x960 60.00<br>  1360x768 60.02<br>  1280x800 59.81<br>  1152x864 75.00<br>  1280x768 59.87<br>  1024x768 60.00<br>  800x600 60.32<br>  640x480 59.94<br>Virtual2 disconnected (normal left inverted right x axis y axis)<br>Virtual3 disconnected (normal left inverted right x axis y axis)<br>Virtual4 disconnected (normal left inverted right x axis y axis)<br>Virtual5 disconnected (normal left inverted right x axis y axis)<br>Virtual6 disconnected (normal left inverted right x axis y axis)<br>Virtual7 disconnected (normal left inverted right x axis y axis)<br>Virtual8 disconnected (normal left inverted right x axis y axis)<br>  1920x1080_60.00 (0x1f6) 173.000MHz -HSync +VSync<br>  h: width 1920 start 2048 end 2248 total 2576 skew 0 clock 67.16KHz<br>  v: height 1080 start 1083 end 1088 total 1120 clock 59.96Hz<br>pengzhen@pz:~$ cvt 1920 1080<br><span class="hljs-comment"># 1920x1080 59.96 Hz (CVT 2.07M9) hsync: 67.16 kHz; pclk: 173.00 MHz</span><br>Modeline <span class="hljs-string">"1920x1080_60.00"</span> 173.00 1920 2048 2248 2576 1080 1083 1088 1120 -hsync +vsync<br><br>pengzhen@pz:~$ sudo xrandr --newmode <span class="hljs-string">"1920x1080_60.00"</span> 173.00 1920 2048 2248 2576 1080 1083 1088 1120 -hsync +vsync<br>pengzhen@pz:~$ sudo xrandr --addmode Virtual1 <span class="hljs-string">"1920x1080_60.00"</span><br>pengzhen@pz:~$ sudo xrandr --output Virtual1 --mode <span class="hljs-string">"1920x1080_60.00"</span><br></code></pre>
+
+<p>这样改动只针对当前会话，重新启动后，分辨率还是会变成1920*1200，我们将以上命令保存到<code>/etc/profile</code>文件中去即可以每次启动都是1920*1080的分辨率</p></div></body></html>

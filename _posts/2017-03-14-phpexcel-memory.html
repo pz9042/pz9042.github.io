@@ -1,0 +1,22 @@
+---
+layout: article
+title:  "phpexcel-读取excel-2007-内存占用过大"
+tags: php phpexcel
+categories: php
+date: 2017-03-14 14:16:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="phpexcel-读取excel-2007-内存占用过大">PHPExcel 读取Excel 2007 内存占用过大</h3>
+
+<p>今天一同事告诉我说，他们财务给他们的Excel文件，用PHPExcel读取的时候，一直报 memory 不足，但这个Excel文件内容并不多，就几十行4列。文件发给我，我用PHPExcel读了下，也是报内存不足，在开启内存不限制后，程序虽可以读出来，但是毕竟慢，并且足足占用了<code>200多M的内存</code>，观察Excel文件大小，有<code>280Kb</code>，这也不正常，后来猜测，可能是Excel中有很多其他的非数据的内容。用以下代码一试：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs">ini_set(<span class="hljs-string">'memory_limit'</span>, <span class="hljs-number">-1</span>);<br>$start = memory_get_usage();<br><span class="hljs-keyword">require</span> <span class="hljs-string">'../vendor/classes/PHPExcel.php'</span>;<br>$objReader = \PHPExcel_IOFactory::createReader(<span class="hljs-string">'Excel2007'</span>);<br><span class="hljs-comment">//重点</span><br>$objReader-&gt;setReadDataOnly(<span class="hljs-keyword">true</span>);<br>$objPHPExcel = $objReader-&gt;load( $_FILES[<span class="hljs-string">'file'</span>][<span class="hljs-string">'tmp_name'</span>] );<br><span class="hljs-comment">//echo $highestRow = $objPHPExcel-&gt;getHighestRow(); // 取得总行数</span><br>$objPHPExcel-&gt;setActiveSheetIndex(<span class="hljs-number">0</span>);<br>$sheet = $objPHPExcel -&gt;getActiveSheet();<br>$data = $sheet -&gt;toArray(<span class="hljs-keyword">null</span> ,<span class="hljs-keyword">true</span> ,<span class="hljs-keyword">true</span> ,<span class="hljs-keyword">true</span>);<br>print_r($data);<br><span class="hljs-keyword">echo</span> memory_get_usage() - $start;<br></code></pre>
+
+<p>内存占用降到了<code>4M</code>，并且很快读出了所有数据</p></div></body></html>
