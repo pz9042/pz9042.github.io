@@ -1,0 +1,78 @@
+---
+layout: article
+title:  "rysnc+inotify远程同步"
+tags: linux rysnc inotify
+categories: linux
+---
+<div id='preview-contents' class='note-content'>
+
+
+<h1 id="rsyncinotify-远程同步">rsync+inotify 远程同步</h1>
+
+<p>rsync是一个可以在网络间同步的工具。它可以快速同步两台或者多台主机间目录的内容。现在我要同步两台主机间某个目录下的内容,例如，将A服务器下的/rsync目录同步到/rsync，我们定义192.168.237.131为A，192.168.237.130为B，在B服务器进行如下操作：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">root@pz:~<span class="hljs-comment"># touch /etc/rsyncd.conf</span><br>root@pz:~<span class="hljs-comment"># touch /etc/rsyncd.secrets</span><br>root@pz:~<span class="hljs-comment"># chmod 600 /etc/rsyncd.conf /etc/rsyncd.secrets</span><br>root@pz:~<span class="hljs-comment"># vim /etc/rsyncd.conf</span><br><span class="hljs-built_in">log</span> file = /var/<span class="hljs-built_in">log</span>/rsyncd.log<br>pid file = /var/run/rsyncd.pid<br>lock file = /var/run/rsync.lock<br><span class="hljs-built_in">log</span> format = %t %a %m %f %b<br>port = 873<br>hosts allow = 192.168.237.0/24 //只允许内网ip链接<br>hosts deny = *<br>[rsync_data]<br>path = /rsync //路径<br>use chroot = <span class="hljs-literal">true</span><br>comment = data dir<br>uid = pengzhen //传输时的用户，确保该用户对path路径有rw权限<br>gid = nobody<br><span class="hljs-built_in">read</span> only = no<br>list = yes<br>auth users=pengzhen //用户名称，在系统中真是存在的，client在连接是需要用到<br>secrets file = /etc/rsyncd.secrets<br>root@pz:~<span class="hljs-comment"># vim /etc/rsyncd.secrets</span><br>pengzhen:123456 //123456为密码<br>root@pz:~<span class="hljs-comment"># rsync --daemon</span><br>root@pz-test:/<span class="hljs-comment"># mkdir /rsync</span><br>root@pz:/data<span class="hljs-comment"># chown pengzhen:pengzhen /rsync</span><br></code></pre>
+
+<p>ok,然后在A服务器执行以下命令</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">root@pz-test:/<span class="hljs-comment"># mkdir /rsync</span><br>root@pz-test:/<span class="hljs-comment"># touch /rsync/a.txt</span><br>root@pz:/data<span class="hljs-comment"># chown -R  pengzhen:pengzhen /rsync</span><br>//<span class="hljs-_">-a</span>选项有保持所属组和用户作用，请确保该目录下的所属用户和所属组在server中都存在，否则就不要开启保持所属用户和组的功能<br>pengzhen@pz-test:/rsync$ rsync -az --progress --delete /rsync/ pengzhen@192.168.237.130::rsync_data<br>Password:<br>sending incremental file list<br>./<br>a.txt<br>0 100% 0.00kB/s 0:00:00 (xfr<span class="hljs-comment">#1, to-chk=0/2)</span><br>pengzhen@pz-test:/rsync$<br></code></pre>
+
+<p>多台服务器也是一样的，例如如果还有一台c，则在c上开启server，b将本地文件同步给 A、C两台远程服务器。 <br>
+inotify是一个基于内核的高效监控文件系统修改的工具。</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz-test:~$ ll /proc/sys/fs/inotify/<br>total 0<br>dr-xr-xr-x 1 root root 0 12月 27 23:45 ./<br>dr-xr-xr-x 1 root root 0 12月 27 14:56 ../<br>-rw-r--r-- 1 root root 0 12月 27 23:45 max_queued_events<br>-rw-r--r-- 1 root root 0 12月 27 23:45 max_user_instances<br>-rw-r--r-- 1 root root 0 12月 27 23:45 max_user_watches<br></code></pre>
+
+<p>如果目录中显示有这三个文件，说明内核是支持inotify的。然后我们还是需要安装 inotify-tools来获得 inotify的shell命令。inotify-tools <a href="https://github.com/rvoicilas/inotify-tools/wiki" target="_blank">wiki地址</a>。 <br>
+首先安装</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/src$ sudo wget http://github.com/downloads/rvoicilas/inotify-tools/inotify-tools-3.14.tar.gz<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/src$ sudo tar -zxvf inotify-tools-3.14.tar.gz<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/src$ <span class="hljs-built_in">cd</span> inotify-tools-3.14/<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/src/inotify-tools-3.14$ sudo ./configure --prefix=/usr/<span class="hljs-built_in">local</span>/inotify-tools<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/src/inotify-tools-3.14$ sudo make<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/src/inotify-tools-3.14$ sudo make install<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/src/inotify-tools-3.14$ <span class="hljs-built_in">cd</span> /usr/<span class="hljs-built_in">local</span>/inotify-tools/<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/inotify-tools$ ls<br>bin include lib share<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/inotify-tools$ ll bin<br>total 140<br>drwxr-xr-x 2 root root 4096 12月 27 23:51 ./<br>drwxr-xr-x 6 root root 4096 12月 27 23:51 ../<br>-rwxr-xr-x 1 root root 67793 12月 27 23:51 inotifywait*<br>-rwxr-xr-x 1 root root 63648 12月 27 23:51 inotifywatch*<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/inotify-tools$<br></code></pre>
+
+<p>inotifywatch跟 inotifywait区别不大，只是 inotifywait能以daemon形式运行而inotifywatch可以进行统计。</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/inotify-tools$ bin/inotifywatch -r -t 60 /rsync<br></code></pre>
+
+<p>同时，打开一个session，进行如下操作</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz-test:/rsync$ ls<br>a.txt<br>pengzhen@pz-test:/rsync$ vim a.txt<br>pengzhen@pz-test:/rsync$ touch b.txt<br>pengzhen@pz-test:/rsync$ touch c.txt<br>pengzhen@pz-test:/rsync$ rm -rf c.txt<br></code></pre>
+
+<p>60秒后inotifywatch输出</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/inotify-tools$ bin/inotifywatch -r -t 60 /rsync<br>Establishing watches...<br>Finished establishing watches, now collecting statistics.<br>total modify attrib close_write close_nowrite open create delete filename<br>106 5 8 7 34 41 6 5 /rsync/<br></code></pre>
+
+<p>注意， inotifywatch不是监控 /rsync下的事件，而是监控pwd在/rsync下的所有事件。然后看下inotifywait</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/inotify-tools$ bin/inotifywait -mr /rsync<br>/rsync/controller/ CREATE index.php<br>/rsync/controller/ OPEN index.php<br>/rsync/controller/ ATTRIB index.php<br>/rsync/controller/ CLOSE_WRITE,CLOSE index.php<br>pengzhen@pz-test:/usr/<span class="hljs-built_in">local</span>/inotify-tools$ bin/inotifywait -mr --format <span class="hljs-string">'%T-%w-%f-%e'</span> --timefmt=<span class="hljs-string">'%Y/%M%D %H:%M:%S'</span> /rsync<br>2016-12-28 04:53:06-/rsync/controller/-index.php-OPEN<br>2016-12-28 04:53:06-/rsync/controller/-index.php~-CREATE<br>2016-12-28 04:53:06-/rsync/controller/-index.php~-OPEN<br>2016-12-28 04:53:06-/rsync/controller/-index.php~-ATTRIB<br>2016-12-28 04:53:06-/rsync/controller/-index.php~-ATTRIB<br>2016-12-28 04:53:06-/rsync/controller/-index.php~-CLOSE_WRITE,CLOSE<br>2016-12-28 04:53:06-/rsync/controller/-index.php~-ATTRIB<br>2016-12-28 04:53:06-/rsync/controller/-index.php~-ATTRIB<br>2016-12-28 04:53:06-/rsync/controller/-index.php-CLOSE_NOWRITE,CLOSE<br>2016-12-28 04:53:06-/rsync/controller/-.index.php.swp-MODIFY<br>2016-12-28 04:53:06-/rsync/controller/-.index.php.swp-MODIFY<br>2016-12-28 04:53:06-/rsync/controller/-index.php-MODIFY<br>2016-12-28 04:53:06-/rsync/controller/-index.php-OPEN<br>2016-12-28 04:53:06-/rsync/controller/-index.php-MODIFY<br>2016-12-28 04:53:06-/rsync/controller/-index.php-CLOSE_WRITE,CLOSE<br>2016-12-28 04:53:06-/rsync/controller/-index.php-ATTRIB<br></code></pre>
+
+<p>%w参数，如果修改的文件是监控的目录下的，则值为所修改文件的dir值，如果不是，则是pwd(当前目录)值。有了inotify后，我们就可以用rsync结合inotify准实时的动态同步两台或多台服务器之间的文件内容。首先在A(client)服务器创建rsync的密码文件</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz-test:~$ vim ~/rsync_130.password<br>123456<br>pengzhen@pz-test:~$ chmod 600 rsync_130.password<br></code></pre>
+
+<p>然后编写shell脚本</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs"><span class="hljs-meta">#!/bin/bash</span><br><span class="hljs-comment">#要同步的目录</span><br>src=/rsync<br><span class="hljs-comment">#目标server</span><br>dest_1=pengzhen@192.168.237.130::rsync_data<br>dest_1_rsync_passwd_file=~/rsync_130.password<br>IFS=<span class="hljs-string">"-"</span><br><span class="hljs-built_in">cd</span> <span class="hljs-variable">$src</span><br>/usr/<span class="hljs-built_in">local</span>/inotify-tools/bin/inotifywait -mr --format <span class="hljs-string">'%T-%w-%f-%e'</span> --timefmt=<span class="hljs-string">'%Y/%m/%d %H:%M:%S'</span> <span class="hljs-variable">$src</span> | <span class="hljs-keyword">while</span> <span class="hljs-built_in">read</span> time dir file event<br><span class="hljs-keyword">do</span><br>  file=<span class="hljs-variable">${dir}</span><span class="hljs-variable">$file</span><br>  file=$(dirname <span class="hljs-variable">$file</span>)<br>  <span class="hljs-keyword">if</span> [ <span class="hljs-variable">$file</span> = <span class="hljs-variable">$src</span> ]<br>  <span class="hljs-keyword">then</span><br>  <span class="hljs-comment">#这里非常纳闷，如果不加上/，会出现很奇怪的事情，同步似乎乱套了</span><br>  file=<span class="hljs-variable">${file}</span>/<br>  <span class="hljs-keyword">fi</span><br>  bool=<span class="hljs-literal">false</span><br>  <span class="hljs-keyword">if</span> [[ <span class="hljs-variable">$event</span> =~ <span class="hljs-string">'CREATE'</span> ]] || [[ <span class="hljs-variable">$event</span> =~ <span class="hljs-string">'MODIFY'</span> ]] || [[ <span class="hljs-variable">$event</span> =~ <span class="hljs-string">'CLOSE_WRITE'</span> ]] || [[ <span class="hljs-variable">$event</span> =~ <span class="hljs-string">'MOVED_TO'</span> ]]<br>  <span class="hljs-keyword">then</span><br>  <span class="hljs-built_in">echo</span> <span class="hljs-string">'CREATE or MODIFY or WRITE or MOVED_TO'</span> <span class="hljs-variable">$file</span><br>  bool=<span class="hljs-literal">true</span><br>  <span class="hljs-comment">#echo -avzc --password-file=$dest_1_rsync_passwd_file ${file} $dest_1</span><br>  <span class="hljs-comment">#rsync -avzc --process --delete --password-file=$dest_1_rsync_passwd_file ${file} $dest_1</span><br>  <span class="hljs-keyword">fi</span><br><br>  <span class="hljs-keyword">if</span> [[ <span class="hljs-variable">$event</span> =~ <span class="hljs-string">'DELETE'</span> ]] || [[ <span class="hljs-variable">$event</span> =~ <span class="hljs-string">'MOVED_FROM'</span> ]]<br>  <span class="hljs-keyword">then</span><br>  <span class="hljs-built_in">echo</span> <span class="hljs-string">'delete or move out file '</span> <span class="hljs-variable">$file</span><br>  bool=<span class="hljs-literal">true</span><br>  <span class="hljs-keyword">fi</span><br><br>  <span class="hljs-keyword">if</span> [[ <span class="hljs-variable">$event</span> =~ <span class="hljs-string">'ATTRIB'</span> ]]<br>  <span class="hljs-keyword">then</span><br>  <span class="hljs-built_in">echo</span> <span class="hljs-string">'modify file attr'</span> <span class="hljs-variable">$file</span><br>  bool=<span class="hljs-literal">true</span><br>  <span class="hljs-keyword">fi</span><br><br>  <span class="hljs-keyword">if</span> <span class="hljs-variable">$bool</span><br>  <span class="hljs-keyword">then</span><br>  <span class="hljs-built_in">echo</span> <span class="hljs-variable">$file</span><br>  <span class="hljs-built_in">echo</span> rsync -avzc --delete --progress --password-file=<span class="hljs-variable">$dest_1_rsync_passwd_file</span> <span class="hljs-variable">${file}</span> <span class="hljs-variable">$dest_1</span><br>  rsync -avzc --delete --progress --password-file=<span class="hljs-variable">$dest_1_rsync_passwd_file</span> <span class="hljs-variable">${file}</span> <span class="hljs-variable">$dest_1</span><br>  <span class="hljs-built_in">echo</span> <span class="hljs-string">'yes'</span><br>  <span class="hljs-keyword">fi</span><br><br><span class="hljs-keyword">done</span><br></code></pre>
+
+<p>这段shell，判断具体的文件，然后同步所在目录，并不是直接同步整个顶层目录。这样做的好处是尽可能的减少同步所需时间和系统的压力。结合上面的脚本，另外可以再加上一个定时任务，每隔一段时间，同步整个目录。这样尽可能的确保文件同步</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz-test:~$ ./rsync.sh<br>Setting up watches. Beware: since -r was given, this may take a <span class="hljs-keyword">while</span>!<br>Watches established.<br><br>modify file attr /rsync/<br>/rsync/<br>rsync -avzc --delete --progress --password-file=/home/pengzhen/rsync_130.password /rsync/ pengzhen@192.168.237.130::rsync_data<br>sending incremental file list<br>./<br>a.txt<br>  0 100% 0.00kB/s 0:00:00 (xfr<span class="hljs-comment">#1, to-chk=0/2)</span><br><br>sent 146 bytes received 38 bytes 368.00 bytes/sec<br>total size is 0 speedup is 0.00<br>yes<br>CREATE or MODIFY or WRITE or MOVED_TO /rsync/<br>/rsync/<br>rsync -avzc --delete --progress --password-file=/home/pengzhen/rsync_130.password /rsync/ pengzhen@192.168.237.130::rsync_data<br>sending incremental file list<br>sent 103 bytes received 12 bytes 76.67 bytes/sec<br>total size is 0 speedup is 0.00<br>yes<br>CREATE or MODIFY or WRITE or MOVED_TO /rsync/<br>/rsync/<br>rsync -avzc --delete --progress --password-file=/home/pengzhen/rsync_130.password /rsync/ pengzhen@192.168.237.130::rsync_data<br>sending incremental file list<br>./<br>conf/<br>sent 149 bytes received 23 bytes 344.00 bytes/sec<br>total size is 0 speedup is 0.00<br>yes<br></code></pre></div>
