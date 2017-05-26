@@ -1,2 +1,4 @@
 theme: jekyll-theme-midnight
 baseurl: /jekyll/update
+permalink: /:categories/:title.html
+
