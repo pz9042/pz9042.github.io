@@ -7,7 +7,7 @@ title: 木偶人的博客
         <div class="block"></div>
         <div class="content typo">
             <ul class="posts">
-                {% for post in site.posts %}
+                {% for post in paginator.posts %}
                     <li><h3><a class="main" href="{{ post.url }}">{{ post.title }}</a></h3></li>
                 {% endfor %}
             </ul>
