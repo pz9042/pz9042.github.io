@@ -1,0 +1,18 @@
+---
+layout: article
+title:  "计算两个时间戳之间的秒数且不包含周末和节假日"
+tags: php 日期
+categories: 代码块
+date: 2017-01-05 17:20:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="计算两个时间戳之间的秒数且不包含周末和节假日">计算两个时间戳之间的秒数,且不包含周末和节假日</h3>
+
+<p>有些业务中，可能会用到计算两个时间戳之间的秒数差，且不包含周末或者节假日。如某些用户提交的操作，需要上游用户在指定工作日内响应，否则按超时处理。 计算<code>2016-08-01 10:30:00</code> 到<code>2016-08-06 10:30:00</code>，由于6号是星期六，故忽略不计，得到的秒数就是<code>394200</code>，记<code>109.5</code>小时。当然也可以在灵活点，比如指定节假日，指定一些虽然是周末但仍属于工作日的日期。代码如下：</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">count_seconds</span><span class="hljs-params">( $start ,$end )</span></span>{<br>    <span class="hljs-comment">//start、end接受符合date format格式的字符串，如2016-08-01 10:30:00</span><br>    $start = <span class="hljs-keyword">new</span> DateTime( $start );<br><br>    $s_time = $start -&gt;getTimestamp();<br>    $s_date = $start -&gt;format( <span class="hljs-string">'Y-m-d'</span> );<br><br>    $end = <span class="hljs-keyword">new</span> DateTime( $end );<br>    $e_time = $end -&gt;getTimestamp();<br>    $e_date = $end -&gt;format( <span class="hljs-string">'Y-m-d'</span> );<br><br>    <span class="hljs-comment">// otherwise the end date is excluded (bug?)</span><br>    $end -&gt;modify(<span class="hljs-string">'+1 day'</span>);<br><br>    <span class="hljs-comment">// create an iterateable period of date (P1D equates to 1 day)</span><br>    $period = <span class="hljs-keyword">new</span> DatePeriod( $start, <span class="hljs-keyword">new</span> DateInterval(<span class="hljs-string">'P1D'</span>), $end );<br>    $days = iterator_count( $period );<br><br>    <span class="hljs-comment">// best stored as array, so you can add more than one</span><br>    $holidays = <span class="hljs-keyword">array</span>(<span class="hljs-string">'2012-09-07'</span>);<br>    $seconds = <span class="hljs-number">0</span>;<span class="hljs-comment">//返回秒数</span><br>    <span class="hljs-keyword">foreach</span>( $period <span class="hljs-keyword">as</span> $k =&gt;$dt ){<br><br>        <span class="hljs-comment">//print_r($dt);continue;</span><br><br>        $ingore = <span class="hljs-keyword">false</span>;<br>        $curr = $dt-&gt;format(<span class="hljs-string">'N'</span>);<br>        $curr_date = $dt-&gt;format(<span class="hljs-string">'Y-m-d'</span>);<br><br>        <span class="hljs-keyword">if</span>( in_array( $curr_date, $holidays ) || ( $curr == <span class="hljs-string">'6'</span> || $curr == <span class="hljs-string">'7'</span> ) ){<br>            $ingore = <span class="hljs-keyword">true</span>;<br>        }<br><br>        <span class="hljs-keyword">if</span>( $ingore ) <span class="hljs-keyword">continue</span>;<br><br>        $d = get_object_vars( $dt );<br><br>        <span class="hljs-keyword">if</span>( $k == <span class="hljs-number">0</span> ){<br>            $seconds = $seconds + strtotime( $s_date.<span class="hljs-string">' 23:59:59'</span> ) - $s_time +<span class="hljs-number">1</span>;<br>            <span class="hljs-keyword">continue</span>;<br>        }<br><br>        <span class="hljs-comment">//var_dump( $curr_date ,$e_date ,$curr_date == $e_date);</span><br>        <span class="hljs-keyword">if</span>( $curr_date == $e_date ){<br>        <span class="hljs-comment">//echo $curr_date;exit;</span><br>            $seconds = $seconds + $e_time - strtotime( $e_date );<br>            <span class="hljs-keyword">break</span>;<br>        }<br><br>        $seconds += <span class="hljs-number">86400</span>;<br>    }<br>    <span class="hljs-keyword">return</span> $seconds;<br>}<br></code></pre></div></body></html>

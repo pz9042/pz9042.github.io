@@ -1,0 +1,20 @@
+---
+layout: article
+title:  "root用户修改文件readonly"
+tags: linux
+categories: 奇难杂症
+date: 2017-01-05 17:14:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="root用户修改文件readonly">root用户修改文件readonly</h3>
+
+<p>使用<code>root</code>用户登录后，用vim修改文件时，发现vim提示</p>
+
+<pre class="prettyprint hljs-dark"><code class="hljs oxygene">E45: <span class="hljs-string">'readonly'</span> option <span class="hljs-keyword">is</span> <span class="hljs-keyword">set</span> (<span class="hljs-keyword">add</span> ! <span class="hljs-keyword">to</span> <span class="hljs-keyword">override</span>)<br></code></pre>
+
+<p>仔细看了下这个文件和目录，没有发现设置过特殊权限，找过资料后发现这个文件的权限是<code>544</code>，因为任何用户都没有写权限，所以vim才提示<code>readonly</code>，在修改文件后 :w!强制保存就OK了。当该文件任何一个用户角色有w权限时就不会再出现<code>readonly</code>了</p></div></body></html>

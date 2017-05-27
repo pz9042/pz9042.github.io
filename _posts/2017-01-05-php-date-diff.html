@@ -1,0 +1,38 @@
+---
+layout: article
+title:  "php计算两个日期之间相差的年月日"
+tags: php date
+categories: 代码块
+date: 2017-01-05 15:01:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="php计算两个日期之间相差的年月日">php计算两个日期之间相差的年月日</h3>
+
+<p>偶尔的一次，有人问了下我，怎么求某个会员到现在多少岁多少个月了，当时简单的回答到用两个时间戳除以每年的秒数，每个月的秒数，每天的秒数。很明显，这个回答是错的，后来就仔细想了下，确实不好实现，因为考虑到闰年，每个月天数这两个因素，就不是那么好计算的，然后想起了php的<code>date_diff</code>函数，先代码贴出来：</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs">date_default_timezone_set(<span class="hljs-string">'PRC'</span>);<br>$datetime1 = <span class="hljs-keyword">new</span> DateTime(<span class="hljs-string">'2012-12-08'</span>);<br>$datetime2 = <span class="hljs-keyword">new</span> DateTime(<span class="hljs-string">'2011-10-11'</span>);<br>$interval = $datetime1 -&gt;diff($datetime2);<br><span class="hljs-keyword">echo</span> $interval -&gt;format(<span class="hljs-string">'%R%a days'</span>),PHP_EOL;<br><span class="hljs-keyword">echo</span> $interval -&gt;format(<span class="hljs-string">'%Y-%m-%d'</span>),PHP_EOL;<br></code></pre>
+
+<p>输出结果为-424 days 01-1-28，也就是说相差了1年1个月28天，然后在看</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs">date_default_timezone_set(<span class="hljs-string">'PRC'</span>);<br>$datetime1 = <span class="hljs-keyword">new</span> DateTime(<span class="hljs-string">'2011-12-08'</span>);<br>$datetime2 = <span class="hljs-keyword">new</span> DateTime(<span class="hljs-string">'2010-10-11'</span>);<br>$interval = $datetime1 -&gt;diff($datetime2);<br><span class="hljs-keyword">echo</span> $interval -&gt;format(<span class="hljs-string">'%R%a days'</span>),PHP_EOL;<br><span class="hljs-keyword">echo</span> $interval -&gt;format(<span class="hljs-string">'%Y-%m-%d'</span>),PHP_EOL;<br></code></pre>
+
+<p>输出结果为-423 days 01-1-28，也就是说相差了1年1个月28天，对比两者不难发现，php这样计算是对的，php在计算的过程中考虑到了闰年的问题，但令人奇怪的是，2012年12月8号和2011年10月11号真的是相差1年1个月28天吗？应该不是的，而是1年1个月27天,更奇怪的是</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs">date_default_timezone_set(<span class="hljs-string">'PRC'</span>);<br>$datetime1 = <span class="hljs-keyword">new</span> DateTime(<span class="hljs-string">'2010-11-08'</span>);<br>$datetime2 = <span class="hljs-keyword">new</span> DateTime(<span class="hljs-string">'2010-09-11'</span>);<br>$interval = $datetime1 -&gt;diff($datetime2);<br><span class="hljs-keyword">echo</span> $interval -&gt;format(<span class="hljs-string">'%R%a days'</span>),PHP_EOL;<br><span class="hljs-keyword">echo</span> $interval -&gt;format(<span class="hljs-string">'%Y-%m-%d'</span>),PHP_EOL;<br></code></pre>
+
+<p>输出结果为-58 days,00-1-27，也就是说相差了1个月27天</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs">date_default_timezone_set(<span class="hljs-string">'PRC'</span>);<br>$datetime1 = <span class="hljs-keyword">new</span> DateTime(<span class="hljs-string">'2010-12-08'</span>);<br>$datetime2 = <span class="hljs-keyword">new</span> DateTime(<span class="hljs-string">'2010-10-11'</span>);<br>$interval = $datetime1 -&gt;diff($datetime2);<br><span class="hljs-keyword">echo</span> $interval -&gt;format(<span class="hljs-string">'%R%a days'</span>),PHP_EOL;<br><span class="hljs-keyword">echo</span> $interval -&gt;format(<span class="hljs-string">'%Y-%m-%d'</span>),PHP_EOL;<br></code></pre>
+
+<p>输出结果为-58 days,00-1-28，也就是说<code>相差了1个月28天</code>，看了这几个例子实在不明白php是怎么算的，这两个结果和我们理解的完全相反，不知道是我理解有误还是php的规则有特殊之处</p></div></body></html>

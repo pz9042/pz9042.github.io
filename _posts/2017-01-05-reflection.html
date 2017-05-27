@@ -1,0 +1,22 @@
+---
+layout: article
+title:  "列出某个php扩展的所有类以及方法成员"
+tags: php reflection
+categories: 代码块
+date: 2017-01-05 14:51:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="列出某个php扩展的所有类以及方法成员">列出某个php扩展的所有类以及方法成员</h3>
+
+<p>在网上发现一段列出某个扩展下的所有类、成员属性、成员方法以及方法的参数等，感觉还不错，蛮实用的。</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-meta">&lt;?php</span><br>$e = <span class="hljs-keyword">new</span> ReflectionExtension(<span class="hljs-string">'gearman'</span>);<br><span class="hljs-keyword">print</span> <span class="hljs-string">"&lt;?php<br><br>// Gearman Version: "</span> . $e-&gt;getVersion() . <span class="hljs-string">"<br><br>"</span>;<br><span class="hljs-keyword">foreach</span> ($e-&gt;getClasses() <span class="hljs-keyword">as</span> $c) {<br>  <span class="hljs-keyword">print</span> <span class="hljs-string">'class '</span> . $c-&gt;name . <span class="hljs-string">" {<br>"</span>;<br>  <span class="hljs-keyword">foreach</span> ($c-&gt;getMethods() <span class="hljs-keyword">as</span> $m) {<br>    <span class="hljs-keyword">print</span> <span class="hljs-string">'  '</span>;<br>    <span class="hljs-keyword">if</span> ($m-&gt;isPublic()) {<br>        <span class="hljs-keyword">print</span> <span class="hljs-string">'public'</span>;<br>    } <span class="hljs-keyword">elseif</span> ($m-&gt;isProtected()) {<br>        <span class="hljs-keyword">print</span> <span class="hljs-string">'protected'</span>;<br>    } <span class="hljs-keyword">elseif</span> ($m-&gt;isPrivate()) {<br>        <span class="hljs-keyword">print</span> <span class="hljs-string">'private'</span>;<br>    }<br>    <span class="hljs-keyword">print</span> <span class="hljs-string">' function '</span> . $m-&gt;name . <span class="hljs-string">'('</span>;<br>    $sep = <span class="hljs-string">''</span>;<br>    <span class="hljs-keyword">foreach</span> ($m-&gt;getParameters() <span class="hljs-keyword">as</span> $p) {<br>      <span class="hljs-keyword">print</span> $sep;<br>      $sep = <span class="hljs-string">', '</span>;<br>      <span class="hljs-keyword">if</span> ($p-&gt;isOptional())<br>        <span class="hljs-keyword">print</span> <span class="hljs-string">'$'</span> . $p-&gt;name . <span class="hljs-string">' = null'</span> ;<br>      <span class="hljs-keyword">else</span><br>        <span class="hljs-keyword">print</span> <span class="hljs-string">'$'</span> . $p-&gt;name;<br>    }<br>    <span class="hljs-keyword">print</span> <span class="hljs-string">"){}<br>"</span>;<br>  }<br>  <span class="hljs-keyword">print</span> <span class="hljs-string">"}<br><br>"</span>;<br>}<br></code></pre>
+
+<p>这段代码使用到了php的反射机制，php提供了好几个反射类，比较实用，有兴趣的可以去看下</p></div></body></html>

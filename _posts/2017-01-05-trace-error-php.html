@@ -1,0 +1,48 @@
+---
+layout: article
+title:  "php的错误排查之旅"
+tags: 错误排查 日志
+categories: 涨姿势
+date: 2017-01-05 17:22:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="php的错误排查之旅">php的错误排查之旅</h3>
+
+<p>今天写了段导出excel的代码，数据量也不大，一万多行数据，每行30多个字段，执行中，nginx华丽丽的报错了</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-nginx hljs"><span class="hljs-attribute">An</span> <span class="hljs-literal">error</span> occurred.<br><br>Sorry, the page you are looking for is currently unavailable.<br>Please try again later.<br><br>If you are the system administrator of this resource then you should check the <span class="hljs-literal">error</span> log for details.<br><br>Faithfully yours, nginx.<br></code></pre>
+
+<p>查看nginx日志，发现</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-nginx hljs">2016/08/03 16:22:42 [error] 35267<span class="hljs-comment">#0: *680 recv() failed (104: Connection reset by peer) while reading response header from upstream, client: 192.168.237.1, server: local.sellerbackend.com, request: "POST /index.php?r=account/export HTTP/1.1", upstream: "fastcgi://127.0.0.1:9000", host: "local.sellerbackend.com", referrer: "http://local.sellerbackend.com/index.php?r=account/order&amp;order_sn=&amp;mobile=&amp;real_name=&amp;consignee=&amp;invoice_no=&amp;pay_account=&amp;order_status=&amp;add_time=&amp;end_time=&amp;pay_time=&amp;end_pay_time=&amp;refund_start_time=&amp;refund_end_time="</span><br></code></pre>
+
+<p>看这报错提示，貌似是php的问题，然后查看php的fpm log</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">03</span>] WARNING: [pool www] child <span class="hljs-number">32406</span>, script <span class="hljs-string">'/mnt/share/www/api/backend/branches/dev/index.php'</span> (request: <span class="hljs-string">"POST /index.php"</span>) executing too slow (<span class="hljs-number">1.033178</span> sec), logging<br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">03</span>] WARNING: [pool www] child <span class="hljs-number">32405</span>, script <span class="hljs-string">'/mnt/share/www/SellersBackend/branches/dev/web/index.php'</span> (request: <span class="hljs-string">"POST /index.php"</span>) executing too slow (<span class="hljs-number">1.117771</span> sec), logging<br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">03</span>] NOTICE: child <span class="hljs-number">32405</span> stopped <span class="hljs-keyword">for</span> tracing<br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">03</span>] NOTICE: about to trace <span class="hljs-number">32405</span><br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">03</span>] NOTICE: finished trace of <span class="hljs-number">32405</span><br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">03</span>] NOTICE: child <span class="hljs-number">32406</span> stopped <span class="hljs-keyword">for</span> tracing<br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">03</span>] NOTICE: about to trace <span class="hljs-number">32406</span><br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">03</span>] ERROR: failed to ptrace(PEEKDATA) pid <span class="hljs-number">32406</span>: Input/output error (<span class="hljs-number">5</span>)<br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">03</span>] NOTICE: finished trace of <span class="hljs-number">32406</span><br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">09</span>] WARNING: [pool www] child <span class="hljs-number">32405</span> exited on signal <span class="hljs-number">11</span> (SIGSEGV) after <span class="hljs-number">1194.007554</span> seconds from start<br>[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">09</span>:<span class="hljs-number">09</span>] NOTICE: [pool www] child <span class="hljs-number">35395</span> started<br></code></pre>
+
+<p>有点奇怪，google之，发现有老外说可能是开启了php-fpm的<code>slow log</code>的问题，鉴于错误信息前后出现了慢日志信息，就姑且把慢日志关闭。但是还是报错</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs">[<span class="hljs-number">03</span>-Aug<span class="hljs-number">-2016</span> <span class="hljs-number">16</span>:<span class="hljs-number">22</span>:<span class="hljs-number">42</span>] WARNING: [pool www] child <span class="hljs-number">35562</span> exited on signal <span class="hljs-number">11</span> (SIGSEGV) after <span class="hljs-number">22.582922</span> seconds from start<br></code></pre>
+
+<p>不知道什么鬼，感觉触动了某个开关一样，php-fpm进程就直接重启了，查看Ubuntu的系统日志</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-accesslog hljs">Aug <span class="hljs-number">3</span> <span class="hljs-number">16</span>:<span class="hljs-number">34</span>:<span class="hljs-number">07</span> pz kernel: <span class="hljs-string">[21998.221795]</span> php-fpm<span class="hljs-string">[35563]</span>: segfault at <span class="hljs-number">1</span> ip 0000000000686f23 sp 00007ffc31059700 error <span class="hljs-number">4</span> in php-fpm<span class="hljs-string">[400000+7c4000]</span><br></code></pre>
+
+<p>初步看这个错误，好像跟内存相关，突然想起来，在生成excel文件的时候，代码中有加<code>ob_start</code>，估计正是因为这个原因，才导致报错信息没能显示。在代码块中加上</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs">set_time_limit(<span class="hljs-number">0</span>);<br>ini_set(<span class="hljs-string">'memory_limit'</span>, <span class="hljs-number">-1</span>);<br></code></pre>
+
+<p>重新刷新页面，历经40多秒，excel成功下载了。这次排查错误给我的体验就是，碰到一些不知道从何处着手的错误时，首先要查日志，<code>nginx的日志</code>、<code>php的日志还有系统的日志</code>，即使不能直观的看到错误提示，但也能通过这些关键字去<code>Google</code>找到合适的解决办法。最后想说的是，用<code>phpexcel</code>导出稍微大点数据，非常耗资源也非常慢。</p></div></body></html>

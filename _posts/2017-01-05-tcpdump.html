@@ -1,0 +1,40 @@
+---
+layout: article
+title:  "tcpdump 抓包"
+tags: linux tcpdump 抓包
+categories: 拓展
+date: 2017-01-05 14:59:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="tcpdump-抓包">tcpdump 抓包</h3>
+
+<p>在ubuntu下抓包，这里我们测试本地localhost 的http网络数据</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pengzhen-ubuntu:/var/www$ tcpdump src port 80 and host 127.0.0.1 -i lo<br>tcpdump: verbose output suppressed, use -v or -vv <span class="hljs-keyword">for</span> full protocol decode<br>listening on lo, link-type EN10MB (Ethernet), capture size 65535 bytes<br>11:08:00.897861 IP localhost.http &gt; localhost.59246: Flags [S.], seq 1087720934, ack 661279153, win 43690, options [mss 65495,sackOK,TS val 1492895 ecr 1492895,nop,wscale 7], length 0<br>11:08:00.898149 IP localhost.http &gt; localhost.59246: Flags [.], ack 407, win 350, options [nop,nop,TS val 1492895 ecr 1492895], length 0<br>11:08:00.899477 IP localhost.http &gt; localhost.59248: Flags [S.], seq 2849000274, ack 3037691536, win 43690, options [mss 65495,sackOK,TS val 1492895 ecr 1492895,nop,wscale 7], length 0<br>11:08:00.899522 IP localhost.http &gt; localhost.59249: Flags [S.], seq 3548924733, ack 1072726250, win 43690, options [mss 65495,sackOK,TS val 1492895 ecr 1492895,nop,wscale 7], length 0<br>11:08:00.899559 IP localhost.http &gt; localhost.59250: Flags [S.], seq 3498065081, ack 3986631526, win 43690, options [mss 65495,sackOK,TS val 1492895 ecr 1492895,nop,wscale 7], length 0<br>11:08:00.948739 IP localhost.http &gt; localhost.59251: Flags [S.], seq 431395860, ack 3604113264, win 43690, options [mss 65495,sackOK,TS val 1492907 ecr 1492907,nop,wscale 7], length 0<br>11:08:00.949955 IP localhost.http &gt; localhost.59251: Flags [.], ack 383, win 350, options [nop,nop,TS val 1492908 ecr 1492908], length 0<br>但是默认的，ubutntu下的tcpdump不会抓取包的数据，而只是获取tcp请求信息，加上-X选项就可以获得网络包的数据<br><br>tcpdump: verbose output suppressed, use -v or -vv <span class="hljs-keyword">for</span> full protocol decode<br>listening on lo, link-type EN10MB (Ethernet), capture size 65535 bytes<br>11:10:58.432381 IP localhost.http &gt; localhost.59319: Flags [S.], seq 4179982037, ack 3253062559, win 43690, options [mss 65495,sackOK,TS val 1537278 ecr 1537278,nop,wscale 7], length 0<br>0x0000: 4500 003c 0000 4000 4006 3cba 7f00 0001 E..&lt;..@.@.&lt;.....<br>0x0010: 7f00 0001 0050 e7b7 f925 76d5 c1e5 cb9f .....P...%v.....<br>0x0020: a012 aaaa fe30 0000 0204 ffd7 0402 080a .....0..........<br>0x0030: 0017 74fe 0017 74fe 0103 0307 ..t...t.....<br>11:10:58.432716 IP localhost.http &gt; localhost.59319: Flags [.], ack 407, win 350, options [nop,nop,TS val 1537278 ecr 1537278], length 0<br>0x0000: 4500 0034 0228 4000 4006 3a9a 7f00 0001 E..4.(@.@.:.....<br>0x0010: 7f00 0001 0050 e7b7 f925 76d6 c1e5 <span class="hljs-built_in">cd</span>35 .....P...%v....5<br>0x0020: 8010 015e fe28 0000 0101 080a 0017 74fe ...^.(........t.<br>0x0030: 0017 74fe ..t.<br>11:10:58.434628 IP localhost.http &gt; localhost.59321: Flags [S.], seq 3438606328, ack 1484217892, win 43690, options [mss 65495,sackOK,TS val 1537279 ecr 1537279,nop,wscale 7], length 0<br>0x0000: 4500 003c 0000 4000 4006 3cba 7f00 0001 E..&lt;..@.@.&lt;.....<br>0x0010: 7f00 0001 0050 e7b9 ccf4 f7f8 5877 5e24 .....P......Xw^$<br>0x0020: a012 aaaa fe30 0000 0204 ffd7 0402 080a .....0..........<br>0x0030: 0017 74ff 0017 74ff 0103 0307 ..t...t.....<br>11:10:58.434826 IP localhost.http &gt; localhost.59321: Flags [.], ack 383, win 350, options [nop,nop,TS val 1537279 ecr 1537279], length 0<br>0x0000: 4500 0034 8306 4000 4006 b9bb 7f00 0001 E..4..@.@.......<br>0x0010: 7f00 0001 0050 e7b9 ccf4 f7f9 5877 5fa2 .....P......Xw_.<br>0x0020: 8010 015e fe28 0000 0101 080a 0017 74ff ...^.(........t.<br>0x0030: 0017 74ff ..t.<br>11:10:58.436308 IP localhost.http &gt; localhost.59321: Flags [P.], seq 1:368, ack 383, win 350, options [nop,nop,TS val 1537279 ecr 1537279], length 367<br>0x0000: 4500 01a3 8307 4000 4006 b84b 7f00 0001 E.....@.@..K....<br>0x0010: 7f00 0001 0050 e7b9 ccf4 f7f9 5877 5fa2 .....P......Xw_.<br>0x0020: 8018 015e ff97 0000 0101 080a 0017 74ff ...^..........t.<br>0x0030: 0017 74ff 4854 5450 2f31 2e31 2032 3030 ..t.HTTP/1.1.200<br>0x0040: 204f 4b0d 0a53 6572 7665 723a 206e 6769 .OK..Server:.ngi<br>0x0050: 6e78 2f31 2e37 2e31 310d 0a44 6174 653a nx/1.7.11..Date:<br>0x0060: 2054 6875 2c20 3139 204e 6f76 2032 3031 .Thu,.19.Nov.201<br>0x0070: 3520 3033 3a31 303a 3538 2047 4d54 0d0a 5.03:10:58.GMT..<br>0x0080: 436f 6e74 656e 742d 5479 7065 3a20 6170 Content-Type:.ap<br>0x0090: 706c 6963 6174 696f 6e2f 6f63 7465 742d plication/octet-<br>0x00a0: 7374 7265 616d 0d0a 436f 6e74 656e 742d stream..Content-<br>0x00b0: 4c65 6e67 7468 3a20 3135 380d 0a43 6f6e Length:.158..Con<br>0x00c0: 6e65 6374 696f 6e3a 2063 6c6f 7365 0d0a nection:.close..<br>0x00d0: 582d 506f 7765 7265 642d 4279 3a20 5048 X-Powered-By:.PH<br>0x00e0: 502f 352e 342e 3339 0d0a 4361 6368 652d P/5.4.39..Cache-<br>0x00f0: 436f 6e74 726f 6c3a 206e 6f2d 6361 6368 Control:.no-cach<br>0x0100: 650d 0a0d 0a86 97f5 3b00 0080 dfec 6000 e.......;.....`.<br>0x0110: 0000 0050 4850 2059 6172 2053 6572 7665 ...PHP.Yar.Serve<br>0x0120: 7200 0000 0000 0000 0000 0000 0000 0000 r...............<br>0x0130: 0000 0000 0000 0000 0000 0000 0000 0000 ................<br>0x0140: 0000 0000 0000 0000 0000 0000 0000 0000 ................<br>0x0150: 0000 0000 0000 4c50 4850 0059 4152 5f61 ......LPHP.YAR_a<br>0x0160: 3a34 3a7b 733a 313a 2269 223b 693a 3232 :4:{s:1:<span class="hljs-string">"i"</span>;i:22<br>0x0170: 3538 3130 3536 3539 3b73 3a31 3a22 7322 58105659;s:1:<span class="hljs-string">"s"</span><br>0x0180: 3b69 3a30 3b73 3a31 3a22 6f22 3b73 3a30 ;i:0;s:1:<span class="hljs-string">"o"</span>;s:0<br>0x0190: 3a22 223b 733a 313a 2272 223b 613a 303a :<span class="hljs-string">""</span>;s:1:<span class="hljs-string">"r"</span>;a:0:<br>0x01a0: 7b7d 7d {}}<br></code></pre>
+
+<p>虽然我们可以看到数据，但是发现大部分数据都是十六进制的，我们根本看不懂。这个时候，就需要借助另外的工具了，不过首先，我们要把得到的数据输出到制定文件里去</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">root@pengzhen-ubuntu:/var/www<span class="hljs-comment"># tcpdump src port 80 and host 127.0.0.1 -i lo -X -C 1 -Z root -w ./tcpdump.cap</span><br>tcpdump: ./tcpdump.cap: Permission denied<br></code></pre>
+
+<p>即使是root用户，但还是报无权限，执行apparmor_status，发现/usr/sbin/tcpdump 处于enforce mode下，我们修改下tcpdump的mode</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pengzhen-ubuntu:/var/www$ sudo aa-complain /usr/sbin/tcpdump<br>Setting /usr/sbin/tcpdump to complain mode.<br>pengzhen@pengzhen-ubuntu:/var/www$ sudo /etc/init.d/apparmor restart<br> * Reloading AppArmor profiles Skipping profile <span class="hljs-keyword">in</span> /etc/apparmor.d/<span class="hljs-built_in">disable</span>: usr.bin.firefox<br>Skipping profile <span class="hljs-keyword">in</span> /etc/apparmor.d/<span class="hljs-built_in">disable</span>: usr.sbin.rsyslogd<br>  [ OK ]<br>pengzhen@pengzhen-ubuntu:/var/www$<br></code></pre>
+
+<p>修改完后要重启apparmor。</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">root@pengzhen-ubuntu:/var/www<span class="hljs-comment"># tcpdump src port 80 and host 127.0.0.1 -i lo -X -C 1 -Z pengzhen -w ./tcpdump.cap</span><br>tcpdump: listening on lo, link-type EN10MB (Ethernet), capture size 65535 bytes<br>^C15 packets captured<br>30 packets received by filter<br>0 packets dropped by kernel<br>root@pengzhen-ubuntu:/var/www<span class="hljs-comment">#</span><br></code></pre>
+
+<p>在执行tcpdump命令后，我浏览了localhost下的某个文件。然后ctrl-z退出<code>tcpdump</code>。可以看到tcpdump.cap文件已经生成，并且大小大于0了，好了，数据包已经抓到了，接下来就是解析了.要解析数据包，需要借助其他工具，其中一个比较好的工具是<code>wirewhark</code>，在使用的过程中，发现ubuntu版本的<code>wireshark</code>解析数据包是有问题的，window版本没有问题，不知道是不是我版本不对，推荐用window下的来解析</p></div></body></html>

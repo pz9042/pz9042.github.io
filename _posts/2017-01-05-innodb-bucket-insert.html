@@ -1,0 +1,49 @@
+---
+layout: article
+title:  "innodb插入大量数据优化"
+tags: innodb bucket insert
+categories: mysql
+date: 2017-01-05 17:27:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="innodb插入大量数据优化">innodb插入大量数据优化</h3>
+
+<p>mysql版本是5.6，环境是虚拟机，<code>cpu Intel(R) Core(TM) i5-4590 CPU @ 3.30GHz 2核2线程</code>，内存：3G,mysql的配置全部是默认。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">show</span> <span class="hljs-keyword">variables</span> <span class="hljs-keyword">where</span> Variable_Name <span class="hljs-keyword">like</span> <span class="hljs-string">'%innodb_buffer_pool_size%'</span> <span class="hljs-keyword">or</span> Variable_Name <span class="hljs-keyword">like</span> <span class="hljs-string">'innodb_flush_log_at_trx_commit'</span> <span class="hljs-keyword">or</span> Variable_Name=<span class="hljs-string">'innodb_autoinc_lock_mode'</span>;<br>+<span class="hljs-comment">--------------------------------+-----------+</span><br>| Variable_name | Value |<br>+<span class="hljs-comment">--------------------------------+-----------+</span><br>| innodb_autoinc_lock_mode | 1 |<br>| innodb_buffer_pool_size | 134217728 |<br>| innodb_flush_log_at_trx_commit | 1 |<br>+<span class="hljs-comment">--------------------------------+-----------+</span><br>3 rows in <span class="hljs-keyword">set</span> (<span class="hljs-number">0.06</span> sec)<br></code></pre>
+
+<p>由于整个库数据太大，所以，我只导出其中最大的那个表 <br>
+这是通过mysqldump出来的数据</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz:~$ ll -h test.sql<br>-rw-r--r-- 1 pengzhen nobody 2.2G 11月 28 17:01 test.sql<br></code></pre>
+
+<p>不做任何操作，直接导入</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">set</span> @<span class="hljs-keyword">start</span>=<span class="hljs-keyword">unix_timestamp</span>();<br>Query OK, 0 rows affected (0.00 sec)<br><br>mysql&gt; <span class="hljs-keyword">select</span> @<span class="hljs-keyword">start</span>;<br>+<span class="hljs-comment">------------+</span><br>| @<span class="hljs-keyword">start</span> |<br>+<span class="hljs-comment">------------+</span><br>| <span class="hljs-number">1480324972</span> |<br>+<span class="hljs-comment">------------+</span><br><span class="hljs-number">1</span> <span class="hljs-keyword">row</span> <span class="hljs-keyword">in</span> <span class="hljs-keyword">set</span> (<span class="hljs-number">0.00</span> sec)<br><br>mysql&gt; <span class="hljs-keyword">source</span> /home/pengzhen/test.sql;<br>...<br>...<br>Query OK, 2571 rows affected (0.11 sec)<br>Records: 2571 Duplicates: 0 Warnings: 0<br><br>Query OK, 1463 rows affected (0.04 sec)<br>Records: 1463 Duplicates: 0 Warnings: 0<br><br>mysql&gt; <span class="hljs-keyword">select</span> <span class="hljs-keyword">unix_timestamp</span>() - @<span class="hljs-keyword">start</span>;<br>+<span class="hljs-comment">---------------------------+</span><br>| unix_timestamp() - @<span class="hljs-keyword">start</span> |<br>+<span class="hljs-comment">---------------------------+</span><br>| <span class="hljs-number">394</span>|<br>+<span class="hljs-comment">---------------------------+</span><br><span class="hljs-number">1</span> <span class="hljs-keyword">row</span> <span class="hljs-keyword">in</span> <span class="hljs-keyword">set</span> (<span class="hljs-number">0.00</span> sec)<br></code></pre>
+
+<p>将<code>innodb_autoinc_lock_mode</code>设置为2，<code>innodb_buffer_pool_size</code>加大为原来的3倍，<code>innodb_flush_log_at_trx_commit</code> 设置为0，因为这个表没有唯一索引，所以其实不需要设置<code>unique_checks</code>，不过为了示范，还是关闭唯一性检查，等导入完毕在开启。先修改<code>innodb_buffer_pool_size</code>，然后重启mysql</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-ini hljs"><span class="hljs-attr">innodb_buffer_pool_size</span>=<span class="hljs-number">384</span>M<br><span class="hljs-attr">innodb_autoinc_lock_mode</span>=<span class="hljs-number">2</span><br></code></pre>
+
+<p>重新连接mysql后，修改变量</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">SET</span> unique_checks=<span class="hljs-number">0</span>;<br>Query OK, 0 rows affected (0.00 sec)<br><br>mysql&gt; <span class="hljs-keyword">set</span> <span class="hljs-keyword">session</span> innodb_flush_log_at_trx_commit=<span class="hljs-number">0</span>;<br>Query OK, 0 rows affected (0.00 sec)<br><br>mysql&gt; <span class="hljs-keyword">show</span> <span class="hljs-keyword">variables</span> <span class="hljs-keyword">where</span> Variable_Name <span class="hljs-keyword">like</span> <span class="hljs-string">'%innodb_buffer_pool_size%'</span> <span class="hljs-keyword">or</span> Variable_Name <span class="hljs-keyword">like</span> <span class="hljs-string">'innodb_flush_log_at_trx_commit'</span> <span class="hljs-keyword">or</span> Variable_Name=<span class="hljs-string">'innodb_autoinc_lock_mode'</span>;<br>+<span class="hljs-comment">--------------------------------+-----------+</span><br>| Variable_name | Value |<br>+<span class="hljs-comment">--------------------------------+-----------+</span><br>| innodb_autoinc_lock_mode | 2 |<br>| innodb_buffer_pool_size | 402653184 |<br>| innodb_flush_log_at_trx_commit | 0 |<br>+<span class="hljs-comment">--------------------------------+-----------+</span><br><br>mysql&gt; <span class="hljs-keyword">set</span> @<span class="hljs-keyword">start</span>=<span class="hljs-keyword">unix_timestamp</span>();source /home/pengzhen/test.sql;<br>...<br>...<br><br>Query OK, 2571 rows affected (0.10 sec)<br>Records: 2571 Duplicates: 0 Warnings: 0<br><br>Query OK, 1463 rows affected (0.08 sec)<br>Records: 1463 Duplicates: 0 Warnings: 0<br>mysql&gt; <span class="hljs-keyword">select</span> <span class="hljs-keyword">unix_timestamp</span>() - @<span class="hljs-keyword">start</span>;<br>+<span class="hljs-comment">---------------------------+</span><br>| unix_timestamp() - @<span class="hljs-keyword">start</span> |<br>+<span class="hljs-comment">---------------------------+</span><br>| <span class="hljs-number">331</span> |<br>+<span class="hljs-comment">---------------------------+</span><br><span class="hljs-number">1</span> <span class="hljs-keyword">row</span> <span class="hljs-keyword">in</span> <span class="hljs-keyword">set</span> (<span class="hljs-number">0.05</span> sec)<br></code></pre>
+
+<p>总体来看，快了将近1分钟,在尝试关闭binlog日志</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">mysql&gt; <span class="hljs-keyword">SET</span> sql_log_bin=<span class="hljs-number">0</span>;<br>Query OK, 0 rows affected (0.00 sec)<br><br>mysql&gt; <span class="hljs-keyword">set</span> @<span class="hljs-keyword">start</span>=<span class="hljs-keyword">unix_timestamp</span>();source /home/pengzhen/test.sql;<br>...<br>...<br>mysql&gt; <span class="hljs-keyword">select</span> <span class="hljs-keyword">unix_timestamp</span>() - @<span class="hljs-keyword">start</span>;<br>Query OK, 2571 rows affected (0.58 sec)<br>Records: 2571 Duplicates: 0 Warnings: 0<br><br>Query OK, 1463 rows affected (0.04 sec)<br>Records: 1463 Duplicates: 0 Warnings: 0<br>+<span class="hljs-comment">---------------------------+</span><br>| unix_timestamp() - @<span class="hljs-keyword">start</span> |<br>+<span class="hljs-comment">---------------------------+</span><br>| <span class="hljs-number">321</span> |<br>+<span class="hljs-comment">---------------------------+</span><br><span class="hljs-number">1</span> <span class="hljs-keyword">row</span> <span class="hljs-keyword">in</span> <span class="hljs-keyword">set</span> (<span class="hljs-number">0.02</span> sec)<br></code></pre>
+
+<p>效果不大，注意，关闭与否，要看具体的要求，导入不需要二进制日志的，则可以关闭加快导入速度。当数据量不大，行数多的时候，可以尝试关闭自动提交事务功能，但是当数据量大，关闭自动提交可能会更慢。</p></div></body></html>

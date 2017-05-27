@@ -1,0 +1,16 @@
+---
+layout: article
+title:  "js的isNaN陷阱"
+tags: js
+categories: 奇难杂症
+date: 2017-01-05 14:56:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="js的isnan陷阱">js的isNaN陷阱</h3>
+
+<p>后台的一段js验证代码中，有判断是否为数字的内容，用的是isNaN。测试测的时候估计也是在测abc这样的字符，没有测试空的情况。过了好久，运营才提出这个bug。结果发现，当变量为空时，isNaN 返回的是false。</p></div></body></html>

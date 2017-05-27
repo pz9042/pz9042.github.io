@@ -1,0 +1,41 @@
+---
+layout: article
+title:  "ubuntu下安装sublime并运行php"
+tags: sublime
+categories: 涨姿势
+date: 2017-01-05 14:54:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="ubuntu下安装sublime并运行php">ubuntu下安装sublime并运行php</h3>
+
+<p>首先下载源码到指定目录</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs"><span class="hljs-comment">#cd /usr/local/src</span><br><span class="hljs-comment">#wget http://c758482.r82.cf2.rackcdn.com/sublime_text_3_build_3083_x64.tar.bz2</span><br><span class="hljs-comment">#tar -jxvf sublime_text_3_build_3083_x64.tar.bz2</span><br><span class="hljs-comment">#cd sublime_text_3/</span><br><span class="hljs-comment">#./sublime_text</span><br></code></pre>
+
+<p>就这样，安装好了，但是如果我们向讲sublime固定在启动器里时，退出后，又消失了</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs"><span class="hljs-comment">#vim sublime_text.desktop //把目录设置成实际的目录，并将Icon设置为实际图片地址，我这里是/usr/local/tools/sublime_text_3/Icon/48×48/sublime-text.png</span><br><span class="hljs-comment">#cp ./sublime_text.desktop /usr/share/applications/</span><br></code></pre>
+
+<p>这样，在终端执行./sublime-text后，启动器里就有sublime的图标，右键锁定即可。 <br>
+接下来，是运行php，打开sublime text后，tools-&gt;build system-&gt;new build system，在新打开的文件里，输入</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">{ <span class="hljs-string">"cmd"</span>: [<span class="hljs-string">"/usr/local/bin/php"</span> ,<span class="hljs-string">"<span class="hljs-variable">$file</span>"</span>], <span class="hljs-string">"file_regex"</span> : <span class="hljs-string">"php$"</span>, <span class="hljs-string">"selector"</span> : <span class="hljs-string">"source.php"</span>, }<br></code></pre>
+
+<p>然后点击保存，但是，可能在保存的框里，系统并没有选中任何文件夹。这个时候，打开perference -&gt;browse packages，应该会报权限不足，进入终端</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs"><span class="hljs-variable">$chmod</span> -R 0777 ~/.config/sublime-text-3<br></code></pre>
+
+<p>重新保存一下，会默认选中～/.config/sublime-text-3/Packages/User，ok，运行php搞定了。</p></div></body></html>

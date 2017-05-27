@@ -1,0 +1,21 @@
+---
+layout: article
+title:  "php strtotime的坑"
+tags: php strtotime
+categories: 奇难杂症
+date: 2017-01-05 17:24:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="php-strtotime的坑">php strtotime的坑</h3>
+
+<p>php的<code>strtotime</code>非常强大，但是今天在使用的过程中，发现一个坑</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs">$start_time = mktime( <span class="hljs-number">0</span> ,<span class="hljs-number">0</span> ,<span class="hljs-number">0</span> ,<span class="hljs-number">7</span> ,<span class="hljs-number">27</span> ,<span class="hljs-number">2016</span> );<br>$start_time = strtotime( <span class="hljs-string">'thursday 23:59:59'</span> ,$start_time );<br><br><span class="hljs-keyword">echo</span> date( <span class="hljs-string">'Y-m-d H:i:s'</span> ,$start_time );<br><span class="hljs-comment">//2016-07-28 23:59:59</span><br><br>$start_time = strtotime( <span class="hljs-string">'thursday 23:59:59'</span> ,$start_time );<br><br><span class="hljs-keyword">echo</span> date( <span class="hljs-string">'Y-m-d H:i:s'</span> ,$start_time );<br><span class="hljs-comment">//2016-07-28 23:59:59</span><br><br>$start_time = strtotime( <span class="hljs-string">'monday 23:59:59'</span> ,$start_time );<br><br><span class="hljs-keyword">echo</span> date( <span class="hljs-string">'Y-m-d H:i:s'</span> ,$start_time );<br><span class="hljs-comment">//2016-08-01 23:59:59</span><br></code></pre>
+
+<p>也就是说，当使用星期几的时候，我们很容易为以为，返回的是指定时间的那周的星期几。但是，通过实践得知，如果给定时间是星期三，如果你想返回当周的星期一或者星期二，实际上返回的是下周的时间。而如果要得到周四周五，结果却是对的。 <br>
+另外<code>strtotime</code>支持很多描述性的日期，详 见<a href="http://php.net/manual/zh/datetime.formats.relative.php" target="_blank">官方文档</a></p></div></body></html>

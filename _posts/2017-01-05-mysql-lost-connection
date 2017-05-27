@@ -1,0 +1,20 @@
+---
+layout: article
+title:  "mysql error: Lost connection to MySQL server during query(error_no:2013)"
+tags: mysql
+categories: mysql
+date: 2017-01-05 14:58:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="mysql-error-lost-connection-to-mysql-server-during-queryerrorno2013">mysql error: Lost connection to MySQL server during query(error_no:2013)</h3>
+
+<p>最近碰到一个非常非常奇怪的问题，我用终端连接公司线上mysql的时候，连接后，过几秒钟，执行一条sql（非常简单，不费时），就会报<code>ERROR 2013 (HY000): Lost connection to MySQL server during query</code>这样的错误，但是，客户端根服务的的连接并没有断，然后再次执行该sql，可以非常快的返回结果，接着执行sql的时候，经常会出现这样的情况。后来网上搜了下，发现有两个可能相关的参数：<code>wait_timeout</code>、<code>interactive_time</code>。 <br>
+<code>wait_timeout</code>：指的是mysql在关闭一个非交互的连接之前所要等待的秒数 <br>
+<code>interactive_time</code>：指的是mysql在关闭一个交互的连接之前所要等待的秒数</p>
+
+<p>查了下服务器变量发现这两个变量的值都为30，然后把两个值都修改为300，就不会出现这个问题了。</p></div></body></html>

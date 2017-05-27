@@ -1,0 +1,32 @@
+---
+layout: article
+title:  "configure-error-cannot-run-c-compiled-programs"
+tags: xcode
+categories: 奇难杂症
+date: 2017-01-05 17:12:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="configure-error-cannot-run-c-compiled-programs">configure: error: cannot run C compiled programs</h3>
+
+<p>S command: <br>
+haring about solving the issue after upgrading to Mac OS X El Capitan.</p>
+
+<p>Error <br>
+I have homebrew setup before. <br>
+After upgrading to latest Mac OS X, I ran the following command in order to solve another ssl related issue:</p>
+
+<p>brew install openssl <br>
+It returned the following error:</p>
+
+<p>checking whether we are cross compiling… configure: error: in `/private/tmp/pkg-config20150611-7353-5bg3wh/pkg-config-0.28′: <br>
+configure: error: cannot run C compiled programs. <br>
+Full error here:</p>
+
+<p>Solution <br>
+From the error log, it seemed related to compiling library code. I tried cleanup and setup everything and found out that it was the Xcode command line tools. To install/reinstall that, run the following <br>
+xcode-select –install</p></div></body></html>

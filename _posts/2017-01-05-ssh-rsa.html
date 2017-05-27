@@ -1,0 +1,32 @@
+---
+layout: article
+title:  "ssh通过密钥登录"
+tags: ssh
+categories: 涨姿势
+date: 2017-01-05 17:14:00
+---
+<!DOCTYPE html><html><head><title>ssh通过密钥登录</title><meta charset='utf-8'><link href='https://dn-maxiang.qbox.me/res-min/themes/marxico.css' rel='stylesheet'><style>.note-content , .note-content  div {font-size: 16px;}
+
+.note-content  {font-family: "Helvetica Neue", Arial, "Hiragino Sans GB", STHeiti, "Microsoft YaHei", "WenQuanYi Micro Hei", SimSun, Song, sans-serif;}
+
+</style></head><body><div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="ssh通过密钥登录">ssh通过密钥登录</h3>
+
+<p>一般来讲，我们的ssh服务都是通过口令来验证的，但是在某些场合，可能不能通过这种交互式的方式去连接，这个时候，通过密钥验证就可以直接登录。ssh客户端和服务端的配置文件分别是<code>/etc/ssh/ssh_config</code>、<code>/etc/ssh/sshd_config</code>，其中有关于通过密钥方式登录的各个配置。从配置中可以知道，ssh支持多种密钥方式。这里采用rsa加密的密钥。假设我们有A(pz)、B(test)两台服务器，A服务器使用pengzhen账号免密码ssh登录B服务器的root账号，操作过程如下：</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">登录A服务器并进入pengzhen的家目录<br>pengzhen@pz:~$ <span class="hljs-built_in">pwd</span><br>/home/pengzhen<br>pengzhen@pz:~$ ssh-keygen -t rsa<br>Generating public/private rsa key pair.<br>Enter file <span class="hljs-keyword">in</span> <span class="hljs-built_in">which</span> to save the key (/home/pengzhen/.ssh/id_rsa):<br>Enter passphrase (empty <span class="hljs-keyword">for</span> no passphrase):<br>Enter same passphrase again:<br>Your identification has been saved <span class="hljs-keyword">in</span> /home/pengzhen/.ssh/id_rsa.<br>Your public key has been saved <span class="hljs-keyword">in</span> /home/pengzhen/.ssh/id_rsa.pub.<br>The key fingerprint is:<br>SHA256:me1m+A+v+1/kFhNqdonVyjTTTA4LYqfkYZ0d7gmosKA pengzhen@pz<br>The key<span class="hljs-string">'s randomart image is:<br>+---[RSA 2048]----+<br>| *.ooo..|<br>| = *oo.B.|<br>| . . + . *o=|<br>| . . o = =+=o|<br>| E . S . ===.|<br>| o o .oo|<br>| . = +|<br>| + o o |<br>| +=+.. |<br>+----[SHA256]-----+<br>pengzhen@pz:~$ cd .ssh<br>pengzhen@pz:~/.ssh$ ll -h<br>total 16K<br>drwx------ 2 pengzhen nobody 4.0K Aug 16 10:39 ./<br>drwxr-xr-x 49 pengzhen nobody 4.0K Aug 15 17:22 ../<br>-rw------- 1 pengzhen nobody 1.8K Aug 16 10:39 id_rsa<br>-rw-r--r-- 1 pengzhen nobody 393 Aug 16 10:39 id_rsa.pub</span><br></code></pre>
+
+<p><code>id_rsa</code>就是私钥了，<code>id_rsa.pub</code>就是公钥,然后将公钥的内容拷贝到B服务器下的<code>/root/.ssh/authorized_keys</code>中，确保<code>authorized_keys</code>的权限为644或者600。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">root@<span class="hljs-built_in">test</span>:/root/.ssh<span class="hljs-comment"># ll</span><br>total 16<br>drwx------ 2 root root 4096 Aug 16 10:43 ./<br>drwx------ 16 root root 4096 May 17 15:03 ../<br>-rw-r--r-- 1 root root 392 Aug 16 10:43 authorized_keys<br>-rw-r--r-- 1 root root 442 May 17 15:03 known_hosts<br>root@<span class="hljs-built_in">test</span>:/root/.ssh<span class="hljs-comment">#</span><br></code></pre>
+
+<p>ok，B服务器已经配置好了，然后到A服务器尝试登录：</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">pengzhen@pz:~/.ssh$ ssh root@192.168.237.128<br>Enter passphrase <span class="hljs-keyword">for</span> key <span class="hljs-string">'/home/pengzhen/.ssh/id_rsa'</span>:<br>Welcome to Ubuntu 16.04 LTS (GNU/Linux 4.4.0-22-generic x86_64)<br><br> * Documentation: https://help.ubuntu.com/<br><br>449 packages can be updated.<br>138 updates are security updates.<br><br>The programs included with the Ubuntu system are free software;<br>the exact distribution terms <span class="hljs-keyword">for</span> each program are described <span class="hljs-keyword">in</span> the<br>individual files <span class="hljs-keyword">in</span> /usr/share/doc/*/copyright.<br><br>Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by<br>applicable law.<br><br>root@<span class="hljs-built_in">test</span>:~<span class="hljs-comment">#</span><br></code></pre>
+
+<p>最后总结下，<code>目标服务器如果想让别的用户免密码登录，就必须保存对方的公钥。这跟我们平时的思维有点不一样，一般，目标服务器保存私钥，其他服务器保存公钥。当然，如果另外有一台C 服务器也想登录B服务器，步骤是一样的，只不过是将C 的公钥追加到A服务器中的authorized_keys中。</code></p></div></body></html>
