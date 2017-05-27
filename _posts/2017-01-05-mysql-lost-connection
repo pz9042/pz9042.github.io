@@ -1,6 +1,6 @@
 ---
 layout: article
-title:  "mysql error: Lost connection to MySQL server during query(error_no:2013)"
+title:  "mysql error: Lost connection to MySQL server during query [error_no:2013]"
 tags: mysql
 categories: mysql
 date: 2017-01-05 14:58:00
