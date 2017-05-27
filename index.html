@@ -12,23 +12,24 @@ title: 木偶人的博客
                 {% endfor %}
             </ul>
         </div>
+        <div class="pagination content">
+            <ul>
+            {% if paginator.previous_page %}
+                <li><a href="{{ paginator.previous_page_path }}" class="previous">上一页</a></li>
+            {% else %}
+                <li>上一页</li>
+            {% endif %}
+            <li><span class="page_number ">第{{ paginator.page }}页</span></li>
+            <li><span class="page_number ">共{{ paginator.total_pages }}页</span></li>
+            {% if paginator.next_page %}
+                <li><a href="{{ paginator.next_page_path }}" class="next">下一页</a></li>
+            {% else %}
+                <li>下一页</li>
+            {% endif %}
+            </ul>
+        </div>
     </div>
     <!-- Pagination links -->
     
 
-<div class="pagination content">
-    <ul>
-        {% if paginator.previous_page %}
-            <li><a href="{{ paginator.previous_page_path }}" class="previous">上一页</a></li>
-        {% else %}
-            <li>上一页</li>
-         {% endif %}
-        <li><span class="page_number ">第{{ paginator.page }}页</span></li>
-        <li><span class="page_number ">共{{ paginator.total_pages }}页</span></li>
-         {% if paginator.next_page %}
-            <li><a href="{{ paginator.next_page_path }}" class="next">下一页</a></li>
-        {% else %}
-            <li>下一页</li>
-        {% endif %}
-    </ul>
-</div>
+
