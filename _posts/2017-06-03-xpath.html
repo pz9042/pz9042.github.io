@@ -1,0 +1,20 @@
+---
+layout: article
+title:  "xpath使用"
+tags: xpath
+categories: 拓展
+date: 2017-06-03 01:44:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h4 id="xpath使用">xpath使用</h4>
+
+<p>今天才发现XPath这个好东西，借助XPath，可以非常灵活、方便的查找、获取xml、HTML内部元素以及内容。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-meta">&lt;?php</span><br>libxml_use_internal_errors(<span class="hljs-keyword">true</span>);<br>$file = <span class="hljs-keyword">__DIR__</span>. <span class="hljs-string">"/xpath.html"</span>;<br><br>$doc = <span class="hljs-keyword">new</span> DOMDocument();<br>$doc-&gt;loadHTMLFile($file);<br><span class="hljs-comment">#print_r($doc);</span><br>$xpath = <span class="hljs-keyword">new</span> DOMXpath($doc);<br><br>$base_info = $xpath -&gt;query( <span class="hljs-string">"//div[@id='j-proInfo']/div[position()=2]"</span> );<br><br><span class="hljs-keyword">echo</span> <span class="hljs-string">'商品名称：'</span>,$xpath -&gt;query( <span class="hljs-string">'//h2[1]'</span> ) -&gt;item(<span class="hljs-number">0</span>) -&gt;nodeValue,PHP_EOL;<br><span class="hljs-comment">//echo $goods_name;exit;</span><br><span class="hljs-comment">//在原来的位置处继续查找</span><br>$price = $xpath -&gt;query ( <span class="hljs-string">'./p[@class="price"]/child::*'</span> ,$base_info -&gt;item(<span class="hljs-number">0</span>) );<span class="hljs-comment">//相对节点,child::*XPath 轴</span><br><span class="hljs-keyword">echo</span> <span class="hljs-string">'售价：'</span>,$price -&gt;item(<span class="hljs-number">1</span>) -&gt;nodeValue,PHP_EOL;<br><span class="hljs-keyword">echo</span> <span class="hljs-string">'原价：'</span>,$price -&gt;item(<span class="hljs-number">2</span>) -&gt;nodeValue,PHP_EOL;<br><span class="hljs-comment">//描述</span><br><br><span class="hljs-keyword">echo</span> <span class="hljs-string">'商品描述：'</span>;<br><span class="hljs-keyword">echo</span> $xpath -&gt;query( <span class="hljs-string">'../following-sibling::*[1]'</span>, $price -&gt;item(<span class="hljs-number">0</span>) ) -&gt;item(<span class="hljs-number">0</span>) -&gt;textContent;<br></code></pre>
+
+<p>相关文档：<a href="http://php.net/manual/zh/class.domxpath.php" target="_blank">php文档</a>、<a href="http://www.w3school.com.cn/xpath/xpath_syntax.asp" target="_blank">xPath语法</a>、<a href="http://www.w3school.com.cn/xpath/xpath_axes.asp" target="_blank">XPath轴</a>、<a href="https://en.wikipedia.org/wiki/XPath#Number_functions" target="_blank">wiki</a></p></div></body></html>
