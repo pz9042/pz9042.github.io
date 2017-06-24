@@ -1,0 +1,206 @@
+
+---
+layout: article
+title:  "nginx限制IP和连接"
+tags: nginx ip限制 连接限制
+categories: 拓展
+date: 2017-06-024 10:28:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="nginx限制连接和请求">nginx限制连接和请求</h3>
+
+<p>先安装nginx的echo模块</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">$ <span class="hljs-built_in">cd</span> /usr/<span class="hljs-built_in">local</span>/src/<br>$ mkdir nginx_module<br>$ <span class="hljs-built_in">cd</span> nginx_module/<br>$ git https://github.com/openresty/<span class="hljs-built_in">echo</span>-nginx-module.git<br>$ <span class="hljs-built_in">cd</span> /usr/<span class="hljs-built_in">local</span>/src/nginx-1.11.6<br>$ ./configure --prefix=/usr/<span class="hljs-built_in">local</span>/nginx --add-module=/usr/<span class="hljs-built_in">local</span>/src/nginx_module/<span class="hljs-built_in">echo</span>-nginx-module<br>$ make -j 5<br>$ cp /usr/<span class="hljs-built_in">local</span>/nginx/sbin/nginx /usr/<span class="hljs-built_in">local</span>/nginx/sbin/nginx_prev <span class="hljs-comment">#注意，我是已经安装了nginx，如果没有安装，则直接执行make install安装即可</span><br>$ objs/nginx -V<br>nginx version: nginx/1.11.6<br>built by gcc 4.4.7 20120313 (Red Hat 4.4.7-11) (GCC)<br>configure arguments: --prefix=/usr/<span class="hljs-built_in">local</span>/nginx --add-module=/usr/<span class="hljs-built_in">local</span>/src/nginx_module/<span class="hljs-built_in">echo</span>-nginx-module<br>$ /usr/<span class="hljs-built_in">local</span>/nginx/sbin/nginx <span class="hljs-_">-s</span> stop<br>$ cp objs/nginx /usr/<span class="hljs-built_in">local</span>/nginx/sbin/<br>$ /usr/<span class="hljs-built_in">local</span>/nginx/sbin/nginx<br></code></pre>
+
+<hr>
+
+<p>有时候，我们需要对那些恶意请求做出限制，比如限制单个ip最多5个连接。这个时候，nginx可以 简单方便的限制连接数。而nginx官方提供了<a href="http://nginx.org/en/docs/http/ngx_http_limit_conn_module.html" target="_blank">ngx_http_limit_conn_module</a>(限制连接)、<a href="http://nginx.org/en/docs/http/ngx_http_limit_req_module.html" target="_blank">ngx_http_limit_req_module</a>(限制请求)。先测试限制请求。</p>
+
+<h4 id="ngxhttplimitreqmodule">ngx_http_limit_req_module</h4>
+
+<p>模块主要有两个指令：</p>
+
+<ul><li><strong>limit_req_zone </strong> ：指令范围：http，语法：limit_req_zone $binary_remote_addr zone=one:10m rate=1r/s; 指令意思为，以客户端请求地址为key，zone名称为one，共享内存大小为10M(该zone可维持（10M/key大小）个key)，且每秒请求数不能超过1次</li>
+<li><strong>limit_req </strong> ：指令范围：http, server, location，语法：limit_req zone=name [burst=number] [nodelay];如limit_req zone=perip burst=5 nodelay; limit_req zone=perserver burst=10; <code>burst：当请求超过limit_req_zone的rate时，运行最多burst个请求进入延迟请求队列，超过的则报错</code></li>
+</ul>
+
+<p>这两个指令需要配合使用。接下来，我们实际使用下。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-nginx hljs">http段：<br><span class="hljs-attribute">limit_req_zone</span> <span class="hljs-variable">$binary_remote_addr</span> zone=perip:<span class="hljs-number">10m</span> rate=10r/s;<br>location段：<br><span class="hljs-attribute">limit_req</span> zone=perip burst=<span class="hljs-number">20</span>;<br></code></pre>
+
+<p>然后用jmeter进行测试。并发100进行测试，得到结果：</p>
+
+<table>
+<thead>
+<tr>
+  <th align="center">Label</th>
+  <th>Samples</th>
+  <th align="center">Average</th>
+  <th align="center">Median</th>
+  <th align="center">90% Line</th>
+  <th align="center">95% Line</th>
+  <th align="center">99% Line</th>
+  <th align="center">Min</th>
+  <th align="center">Max</th>
+  <th align="center">Error %</th>
+  <th align="center">Throughput</th>
+  <th align="center">Received KB/sec</th>
+  <th>Sent KB/sec</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td align="center">HTTP请求</td>
+  <td>100</td>
+  <td align="center">388</td>
+  <td align="center">2</td>
+  <td align="center">1799</td>
+  <td align="center">1998</td>
+  <td align="center">2005</td>
+  <td align="center">1</td>
+  <td align="center">2005</td>
+  <td align="center">69.000%</td>
+  <td align="center">33.28895</td>
+  <td align="center">18.79</td>
+  <td>4.16</td>
+</tr>
+<tr>
+  <td align="center">总体</td>
+  <td>100</td>
+  <td align="center">388</td>
+  <td align="center">2</td>
+  <td align="center">1799</td>
+  <td align="center">1998</td>
+  <td align="center">2005</td>
+  <td align="center">1</td>
+  <td align="center">2005</td>
+  <td align="center">69.000%</td>
+  <td align="center">33.28895</td>
+  <td align="center">18.79</td>
+  <td>4.16</td>
+</tr>
+</tbody></table>
+
+
+<p>从结果中，可以看出，最大执行时间是2秒，这是因为，限制没秒最大请求数10，burst为20，其中70个请求返回错误，20个请求被延迟到第二秒，结果大体符合我们的限制。修改limit_req：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-nginx hljs"><span class="hljs-attribute">limit_req</span> zone=perip burst=<span class="hljs-number">20</span> nodelay;<br></code></pre>
+
+<p>结果：</p>
+
+<table>
+<thead>
+<tr>
+  <th align="center">Label</th>
+  <th>Samples</th>
+  <th align="center">Average</th>
+  <th align="center">Median</th>
+  <th align="center">90% Line</th>
+  <th align="center">95% Line</th>
+  <th align="center">99% Line</th>
+  <th align="center">Min</th>
+  <th align="center">Max</th>
+  <th align="center">Error %</th>
+  <th align="center">Throughput</th>
+  <th align="center">Received KB/sec</th>
+  <th>Sent KB/sec</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td align="center">HTTP请求</td>
+  <td>100</td>
+  <td align="center">1</td>
+  <td align="center">1</td>
+  <td align="center">2</td>
+  <td align="center">2</td>
+  <td align="center">3</td>
+  <td align="center">1</td>
+  <td align="center">3</td>
+  <td align="center">69.000%</td>
+  <td align="center">99.70090</td>
+  <td align="center">56.27</td>
+  <td>12.46</td>
+</tr>
+<tr>
+  <td align="center">总体</td>
+  <td>100</td>
+  <td align="center">1</td>
+  <td align="center">1</td>
+  <td align="center">2</td>
+  <td align="center">2</td>
+  <td align="center">3</td>
+  <td align="center">1</td>
+  <td align="center">3</td>
+  <td align="center">69.000%</td>
+  <td align="center">99.70090</td>
+  <td align="center">56.27</td>
+  <td>12.46</td>
+</tr>
+</tbody></table>
+
+
+<p>不设置nodelay，整个请求在2毫秒内完成。接着不设置burst。</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-nginx hljs"><span class="hljs-attribute">limit_req</span> zone=perip;<br></code></pre>
+
+<table>
+<thead>
+<tr>
+  <th align="center">Label</th>
+  <th>Samples</th>
+  <th align="center">Average</th>
+  <th align="center">Median</th>
+  <th align="center">90% Line</th>
+  <th align="center">95% Line</th>
+  <th align="center">99% Line</th>
+  <th align="center">Min</th>
+  <th align="center">Max</th>
+  <th align="center">Error %</th>
+  <th align="center">Throughput</th>
+  <th align="center">Received KB/sec</th>
+  <th>Sent KB/sec</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td align="center">HTTP请求</td>
+  <td>100</td>
+  <td align="center">1</td>
+  <td align="center">2</td>
+  <td align="center">2</td>
+  <td align="center">2</td>
+  <td align="center">2</td>
+  <td align="center">0</td>
+  <td align="center">2</td>
+  <td align="center">90.000%</td>
+  <td align="center">99.10803</td>
+  <td align="center">66.30</td>
+  <td>12.39</td>
+</tr>
+<tr>
+  <td align="center">总体</td>
+  <td>100</td>
+  <td align="center">1</td>
+  <td align="center">2</td>
+  <td align="center">2</td>
+  <td align="center">2</td>
+  <td align="center">2</td>
+  <td align="center">0</td>
+  <td align="center">2</td>
+  <td align="center">90.000%</td>
+  <td align="center">99.10803</td>
+  <td align="center">66.30</td>
+  <td>12.39</td>
+</tr>
+</tbody></table>
+
+
+<p>成功率只有10%，多余的请求数都被返回错误。</p></div></body></html>
