@@ -1,0 +1,56 @@
+---
+layout: article
+title:  "mysql使用haproxy负载"
+tags: MySQL haproxy 负载
+categories: mysql
+date: 2017-07-25 16:35:00
+---
+<div id='preview-contents' class='note-content'>
+                        
+                    
+
+
+
+<h3 id="mysql使用haproxy负载">MySQL使用haproxy负载</h3>
+
+<p>MySQL后端总共有<code>192.168.128</code>、<code>192.168.127</code>、<code>192.168.126</code>。在三台服务器中分别创建test库和haproxy表。表结构如下：</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> <span class="hljs-string">`haproxy`</span> (<br>  <span class="hljs-string">`id`</span> <span class="hljs-built_in">int</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span> AUTO_INCREMENT,<br>  <span class="hljs-string">`host_name`</span> <span class="hljs-built_in">varchar</span>(<span class="hljs-number">15</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,<br>  PRIMARY <span class="hljs-keyword">KEY</span> (<span class="hljs-string">`id`</span>)<br>) <span class="hljs-keyword">ENGINE</span>=<span class="hljs-keyword">InnoDB</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">CHARSET</span>=utf8<br></code></pre>
+
+<p>分别执行：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-sql hljs">128：<span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> haproxy(host_name) <span class="hljs-keyword">values</span>(<span class="hljs-string">'128'</span>);<br>127：<span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> haproxy(host_name) <span class="hljs-keyword">values</span>(<span class="hljs-string">'127'</span>);<br>128：<span class="hljs-keyword">insert</span> <span class="hljs-keyword">into</span> haproxy(host_name) <span class="hljs-keyword">values</span>(<span class="hljs-string">'126'</span>);<br></code></pre>
+
+<p>在<code>192.168.237.130</code>中安装haproxy</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs"><span class="hljs-comment"># cd /usr/local/src/</span><br><span class="hljs-comment"># wget  http://www.haproxy.org/download/1.7/src/haproxy-1.7.8.tar.gz //最新稳定版</span><br><span class="hljs-comment"># tar zxvf haproxy-1.7.8.tar.gz </span><br><span class="hljs-comment"># cd haproxy-1.7.8/</span><br><span class="hljs-comment"># make PREFIX=/usr/local/haproxy TARGET=linux2628 USE_PCRE=1 USE_ZLIB=1(查看README文件，选项查看MakeFile文件)</span><br><span class="hljs-comment"># make install PREFIX=/usr/local/haproxy</span><br><span class="hljs-comment"># mkdir /etc/haproxy</span><br><span class="hljs-comment"># cp content-sw-sample.cfg /etc/haproxy/haproxy.cfg</span><br><span class="hljs-comment"># cd /usr/local/haproxy/</span><br><span class="hljs-comment"># vim /etc/haproxy/haproxy.cfg </span><br>global<br>        maxconn         10000<br>        <span class="hljs-comment">#stats socket    /var/run/haproxy.stat mode 600 level admin</span><br>        <span class="hljs-comment">#log             127.0.0.1 local0</span><br>        user            nobody<br>        group           nobody<br>        daemon<br>        nbproc          2<br>        pidfile         /var/run/haproxy.pid<br><br>defaults<br>        mode            http<br>        retries         3<br>        timeout connect 10s<br>        timeout client  10s<br>        timeout server  10s<br>        timeout check   5s<br><span class="hljs-comment"># The public 'www' address in the DMZ</span><br>frontend mysql_proxy<br>        <span class="hljs-built_in">bind</span>            *:3307<br>        <span class="hljs-comment">#bind            192.168.1.10:443 ssl crt /etc/haproxy/haproxy.pem</span><br>        mode            tcp<br>        <span class="hljs-built_in">log</span>             global<br>        option          dontlognull<br>        maxconn         8000<br>        timeout client  30s<br>        default_backend mysql_pool<br><br><span class="hljs-comment"># The static backend backend for 'Host: img', /img and /css.</span><br>backend mysql_pool<br>        mode            tcp<br>        balance         roundrobin<br>        <span class="hljs-comment">#option prefer-last-server</span><br>        retries         2<br>        server          statsrv1 192.168.237.128:3306 check inter 1000<br>        server          statsrv2 192.168.237.127:3306 check inter 1000<br><br>        server          statsrv3 192.168.237.126:3306 check inter 1000 backup <span class="hljs-comment">#当其他服务器都挂掉时，才启用</span><br>        <span class="hljs-comment">#stats uri /admin?stats</span><br>        <span class="hljs-comment">#stats auth pz:123456</span><br>        <span class="hljs-comment">#stats refresh 5s</span><br>        <span class="hljs-comment">#监控页面可禁用后端服务器</span><br>        <span class="hljs-comment">#stats admin if TRUE</span><br><span class="hljs-comment"># the application servers go here</span><br></code></pre>
+
+<blockquote>
+  <p>haproxy针对tcp层的负载，选项不多。如果是http的话，配置项较多。查看<a href="http://cbonte.github.io/haproxy-dconv/1.7/configuration.html" target="_blank">配置文档</a></p>
+</blockquote>
+
+<p>编写脚本读取数据库表内容：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-meta">&lt;?php</span><br>$con = mysql_connect(<span class="hljs-string">"192.168.237.130:3307"</span>, <span class="hljs-string">"root"</span>, <span class="hljs-string">"qwer1111"</span>);<br><span class="hljs-keyword">if</span> (!$con)<br>{<br>    <span class="hljs-keyword">die</span>(<span class="hljs-string">'Could not connect: '</span> . mysql_error());<br>}<br><br>$db_selected = mysql_select_db(<span class="hljs-string">"test"</span>,$con);<br>$sql = <span class="hljs-string">"SELECT * from haproxy"</span>;<br>$result = mysql_query($sql,$con);<br>print_r(mysql_fetch_assoc($result));<br><br>mysql_close($con);<br><span class="hljs-meta">?&gt;</span><br></code></pre>
+
+<p>多次刷新，会依次打印如下信息：</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-keyword">Array</span><br>(<br>    [id] =&gt; <span class="hljs-number">1</span><br>    [host_name] =&gt; <span class="hljs-number">128</span><br>)<br><span class="hljs-keyword">Array</span><br>(<br>    [id] =&gt; <span class="hljs-number">2</span><br>    [host_name] =&gt; <span class="hljs-number">127</span><br>)<br></code></pre>
+
+<p>然后，关闭<code>127</code>上的MySQL实例</p>
+
+
+
+<pre class="prettyprint hljs-dark"><code class="language-bash hljs">/usr/<span class="hljs-built_in">local</span>/mysql/bin/mysqladmin -uroot -p shutdown<br><span class="hljs-comment">#会正常输出信息，输出的字段host_name中未128，这表面127已经被haproxy标记为不可用</span><br></code></pre>
+
+<p>在关闭<code>128</code>，一直输出</p>
+
+<pre class="prettyprint hljs-dark"><code class="language-php hljs"><span class="hljs-keyword">Array</span><br>(<br>    [id] =&gt; <span class="hljs-number">1</span><br>    [host_name] =&gt; <span class="hljs-number">126</span><br>)<br></code></pre>
+
+<p>总体上来说，在tcp层的负载配置相对简单，而http层的负载，配置就比较多了。</p></div></body></html>
